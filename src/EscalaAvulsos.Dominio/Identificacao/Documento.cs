@@ -1,0 +1,48 @@
+namespace EscalaAvulsos.Dominio.Identificacao;
+
+/// <summary>
+/// Um documento da Receita: o CPF do trabalhador ou o CNPJ do operador
+/// portuário.
+/// </summary>
+/// <remarks>
+/// Guardado sem máscara e mostrado com ela. Dois documentos são iguais se o
+/// tipo e o número são iguais: um CPF nunca é igual a um CNPJ.
+/// </remarks>
+public abstract record Documento
+{
+    private protected Documento(string numero) => Numero = numero;
+
+    /// <summary>Sem máscara: <c>11222333000181</c>, <c>52998224725</c>, <c>12ABC34501DE35</c>.</summary>
+    public string Numero { get; }
+
+    /// <summary>Com a máscara de costume: <c>11.222.333/0001-81</c>, <c>529.982.247-25</c>.</summary>
+    public abstract string Formatado { get; }
+
+    public sealed override string ToString() => Formatado;
+
+    /// <summary>Tira a máscara — pontos, barra, traço e espaços — e põe as letras em maiúscula.</summary>
+    private protected static string Limpar(string texto) =>
+        string.Concat(texto.Where(caractere => caractere is not ('.' or '/' or '-' or ' '))).ToUpperInvariant();
+
+    /// <summary>
+    /// O dígito verificador por módulo 11, com os pesos de 2 a 9 da direita
+    /// para a esquerda — a regra do CPF e do CNPJ. Cada caractere vale o seu
+    /// código ASCII menos 48: os dígitos valem o que são, e as letras do CNPJ
+    /// alfanumérico, de 17 (A) a 42 (Z).
+    /// </summary>
+    private protected static char DigitoVerificador(string caracteres, int maiorPeso)
+    {
+        var soma = 0;
+        var peso = 2;
+
+        for (var posicao = caracteres.Length - 1; posicao >= 0; posicao--)
+        {
+            soma += (caracteres[posicao] - '0') * peso;
+            peso = peso == maiorPeso ? 2 : peso + 1;
+        }
+
+        var resto = soma % 11;
+
+        return resto < 2 ? '0' : (char)('0' + (11 - resto));
+    }
+}

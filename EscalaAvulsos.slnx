@@ -1,0 +1,9 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/EscalaAvulsos.Dominio/EscalaAvulsos.Dominio.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/EscalaAvulsos.Arquitetura.Testes/EscalaAvulsos.Arquitetura.Testes.csproj" />
+    <Project Path="tests/EscalaAvulsos.Dominio.Testes/EscalaAvulsos.Dominio.Testes.csproj" />
+  </Folder>
+</Solution>
