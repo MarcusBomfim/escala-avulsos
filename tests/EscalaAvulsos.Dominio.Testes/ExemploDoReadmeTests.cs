@@ -1,5 +1,7 @@
 using EscalaAvulsos.Dominio.Comum;
 using EscalaAvulsos.Dominio.Escalacoes;
+using EscalaAvulsos.Dominio.Extratos;
+using EscalaAvulsos.Dominio.Frequencias;
 using EscalaAvulsos.Dominio.Identificacao;
 using EscalaAvulsos.Dominio.Periodos;
 using EscalaAvulsos.Dominio.Requisicoes;
@@ -120,7 +122,7 @@ public sealed class ExemploDoReadmeTests
     [Fact]
     public void A_escala_da_tarde_poe_cada_um_na_sua_vez()
     {
-        var (escala, _) = TardeDeQuinta();
+        var escala = TardeDeQuinta().Escala;
 
         Assert.Equal(
             [
@@ -134,7 +136,7 @@ public sealed class ExemploDoReadmeTests
     [Fact]
     public void Quem_ficou_de_fora_sabe_por_que()
     {
-        var (escala, _) = TardeDeQuinta();
+        var escala = TardeDeQuinta().Escala;
 
         Assert.Equal(
             "Benedito Lima (matrícula 4130) ficou fora da escala: como estivador, o rodízio parou 2 posições antes da sua vez.",
@@ -151,11 +153,101 @@ public sealed class ExemploDoReadmeTests
     [Fact]
     public void A_proxima_escala_de_estivador_comeca_depois_do_Edson_e_o_Benedito_e_o_segundo()
     {
-        var (escala, registrados) = TardeDeQuinta();
+        var quinta = TardeDeQuinta();
 
         Assert.Equal(
             [4127, 4130, 4152, 4188, 4101],
-            escala.RodizioDepois.NaOrdemDaVez(Estivador, Inscricao.Registrado, registrados).Select(matricula => matricula.Numero));
+            quinta.Escala.RodizioDepois.NaOrdemDaVez(Estivador, Inscricao.Registrado, quinta.Registrados).Select(matricula => matricula.Numero));
+    }
+
+    [Fact]
+    public void Quem_desiste_da_a_vaga_ao_primeiro_da_espera_e_quem_nao_aparece_fica_com_falta()
+    {
+        var quinta = TardeDeQuinta();
+        var escala = quinta.Escala;
+
+        Assert.Equal(
+            "Benedito Lima (matrícula 4130) está na escala, no lugar de quem desistiu: estivador no terno 1 do navio Atlântico Sul (IMO 9876543), "
+            + "no Terminal Cais Leste, berço 4, em 05/11/2026, das 13h às 19h.",
+            escala.Desistir(quinta.Edson.Id, QuintaAs10h.AddHours(1))?.ToString());
+
+        escala.ConfirmarPresenca(quinta.Antonio.Id, QuintaAs10h.AddHours(2));
+        escala.ConfirmarPresenca(quinta.Benedito.Id, QuintaAs10h.AddHours(2.5));
+        escala.Encerrar(QuintaATarde.Fim);
+
+        Assert.Equal(
+            "Carlos Mota (matrícula 4152) está na escala: estivador no terno 1 do navio Atlântico Sul (IMO 9876543), "
+            + "no Terminal Cais Leste, berço 4, em 05/11/2026, das 13h às 19h. Faltou.",
+            escala.SituacaoDe(Matricula.De(4152))?.ToString());
+    }
+
+    [Fact]
+    public void O_extrato_de_novembro_mostra_cada_periodo_e_ate_quando_e_pago()
+    {
+        var (antonio, escalas, _) = NovembroDoAntonio();
+        var tabela = new TabelaDeRemuneracao([new(Estivador, Dinheiro.Reais(220m)), new(Sinaleiro, Dinheiro.Reais(260m))], adicionalNoturno: 0.20m);
+
+        var extrato = Extrato.De(antonio, Mes.De(2026, 11), escalas, tabela);
+
+        Assert.Equal(
+            [
+                "05/11/2026, das 13h às 19h — sinaleiro no navio Atlântico Sul (IMO 9876543): R$ 260,00, pago até 07/11/2026, às 19h",
+                "07/11/2026, das 19h à 1h — estivador no navio Atlântico Sul (IMO 9876543): R$ 220,00 + R$ 44,00 de adicional noturno = R$ 264,00, pago até 10/11/2026, à 1h",
+            ],
+            extrato.Linhas.Select(linha => linha.ToString()));
+        Assert.Equal(
+            "Antônio Ferreira (matrícula 4127), em 11/2026: 2 períodos, R$ 524,00; férias com 1/3, R$ 58,22; 13º, R$ 43,67; FGTS depositado, R$ 50,07.",
+            extrato.ToString());
+    }
+
+    [Fact]
+    public void A_frequencia_avisa_enquanto_ainda_da_tempo()
+    {
+        var (antonio, escalas, escalacoes) = NovembroDoAntonio();
+
+        var frequencia = FrequenciaDoMes.De(antonio, Mes.De(2026, 11), escalacoes, escalas, RegraDeFrequencia.Padrao, hoje: new DateOnly(2026, 11, 20));
+
+        Assert.Equal(
+            "Antônio Ferreira (matrícula 4127), em 11/2026: 9 habilitações, e o mínimo é 12 — faltam 3 até 30/11/2026. "
+            + "Trabalhou 2 períodos; 0 faltas sem justificativa, de 2 aceitas.",
+            frequencia.ToString());
+    }
+
+    /// <summary>
+    /// O novembro do Antônio: a tarde de quinta, como sinaleiro; a noite de
+    /// sábado, como estivador; e sete manhãs em que ele se habilitou e não foi escalado.
+    /// </summary>
+    private static (Trabalhador Antonio, IReadOnlyList<Escala> Escalas, IReadOnlyList<Escalacao> Escalacoes) NovembroDoAntonio()
+    {
+        var quinta = TardeDeQuinta();
+        var antonio = quinta.Antonio;
+        quinta.Escala.ConfirmarPresenca(antonio.Id, QuintaAs10h.AddHours(2));
+        quinta.Escala.Encerrar(QuintaATarde.Fim);
+
+        var sabadoANoite = new Escalacao(Categoria.Estiva, Periodo.De(new DateOnly(2026, 11, 7), Turno.Noite), CalendarioDaEscalacao.Padrao);
+        sabadoANoite.Habilitar(antonio, [Estivador], sabadoANoite.AberturaDaHabilitacao);
+        var requisicao = new Requisicao(
+            new DadosDaRequisicao(
+                new OperadorPortuario("Cais Forte Operações Portuárias", Cnpj.De("11.222.333/0001-81")),
+                new Navio("Atlântico Sul", NumeroImo.De("IMO 9876543")),
+                new LocalDaOperacao("Terminal Cais Leste", "4"),
+                sabadoANoite.Periodo),
+            [[new(Estivador, 1)]],
+            sabadoANoite.PrazoDasRequisicoes);
+        var noite = Escalador.Escalar(sabadoANoite, [requisicao], [antonio], [], Rodizio.Novo, Descanso.DaLei, sabadoANoite.FechamentoDaHabilitacao);
+        noite.ConfirmarPresenca(antonio.Id, noite.Periodo.Inicio);
+        noite.Encerrar(noite.Periodo.Fim);
+
+        var escalacoes = new List<Escalacao> { quinta.Escalacao, sabadoANoite };
+
+        for (var dia = 9; dia <= 15; dia++)
+        {
+            var manha = new Escalacao(Categoria.Estiva, Periodo.De(new DateOnly(2026, 11, dia), Turno.Manha), CalendarioDaEscalacao.Padrao);
+            manha.Habilitar(antonio, [Estivador], manha.AberturaDaHabilitacao);
+            escalacoes.Add(manha);
+        }
+
+        return (antonio, [quinta.Escala, noite], escalacoes);
     }
 
     /// <summary>
@@ -163,7 +255,7 @@ public sealed class ExemploDoReadmeTests
     /// habilitados, o rodízio de sinaleiro parado no Carlos, o de estivador no
     /// Benedito, e o Dirceu, que trabalhou de manhã.
     /// </summary>
-    private static (Escala Escala, IReadOnlyList<Matricula> Registrados) TardeDeQuinta()
+    private static Quinta TardeDeQuinta()
     {
         var antonio = Antonio();
         var benedito = Registrado(4130, "Benedito Lima");
@@ -200,8 +292,18 @@ public sealed class ExemploDoReadmeTests
         var escala = Escalador.Escalar(
             escalacao, [requisicao], [antonio, benedito, carlos, dirceu, edson, joao], [new Jornada(dirceu.Id, QuintaDeManha)], rodizio, Descanso.DaLei, QuintaAs10h);
 
-        return (escala, [antonio.Matricula, benedito.Matricula, carlos.Matricula, dirceu.Matricula, edson.Matricula]);
+        return new Quinta(escalacao, escala, antonio, benedito, carlos, edson, [antonio.Matricula, benedito.Matricula, carlos.Matricula, dirceu.Matricula, edson.Matricula]);
     }
+
+    /// <summary>A escalação e a escala da tarde de quinta, e quem aparece no exemplo depois dela.</summary>
+    private sealed record Quinta(
+        Escalacao Escalacao,
+        Escala Escala,
+        Trabalhador Antonio,
+        Trabalhador Benedito,
+        Trabalhador Carlos,
+        Trabalhador Edson,
+        IReadOnlyList<Matricula> Registrados);
 
     private static Trabalhador Registrado(int matricula, string nome)
     {

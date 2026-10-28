@@ -126,6 +126,45 @@ escala.SituacaoDe(Matricula.De(5310));
 
 A próxima escala de estivador começa depois da matrícula 4101, a do Edson — e o Benedito, que desta vez não foi alcançado, é o segundo da vez.
 
+Às 11h, o Edson desiste. A vaga vai para o primeiro da espera de estivador — o Benedito —, e a vez do rodízio anda até ele:
+
+```csharp
+escala.Desistir(edson.Id, quintaAs11h);
+// Benedito Lima (matrícula 4130) está na escala, no lugar de quem desistiu: estivador no terno 1 do navio Atlântico Sul, …
+```
+
+Ao meio-dia, o Antônio chega ao cais e tem a presença confirmada; o Benedito, às 12h30. O Carlos não aparece, e às 19h a escala é encerrada:
+
+```csharp
+escala.ConfirmarPresenca(antonio.Id, quintaAoMeioDia);
+escala.ConfirmarPresenca(benedito.Id, quintaAs12h30);
+escala.Encerrar(quintaAs19h);
+
+escala.SituacaoDe(Matricula.De(4152));
+// Carlos Mota (matrícula 4152) está na escala: estivador no terno 1 do navio Atlântico Sul, … Faltou.
+```
+
+No sábado, o Antônio trabalha a noite como estivador. O extrato de novembro mostra cada período, o adicional da noite e até quando cada um é pago — 48 horas depois do fim do serviço:
+
+```csharp
+var tabela = new TabelaDeRemuneracao([new(estivador, Dinheiro.Reais(220m)), new(sinaleiro, Dinheiro.Reais(260m))], adicionalNoturno: 0.20m);
+
+Extrato.De(antonio, Mes.De(2026, 11), escalas, tabela);
+// 05/11/2026, das 13h às 19h — sinaleiro no navio Atlântico Sul (IMO 9876543): R$ 260,00, pago até 07/11/2026, às 19h
+// 07/11/2026, das 19h à 1h — estivador no navio Atlântico Sul (IMO 9876543): R$ 220,00 + R$ 44,00 de adicional noturno
+//   = R$ 264,00, pago até 10/11/2026, à 1h
+// Antônio Ferreira (matrícula 4127), em 11/2026: 2 períodos, R$ 524,00; férias com 1/3, R$ 58,22; 13º, R$ 43,67;
+//   FGTS depositado, R$ 50,07.
+```
+
+E a frequência avisa enquanto ainda dá tempo, e não depois da punição:
+
+```csharp
+FrequenciaDoMes.De(antonio, Mes.De(2026, 11), escalacoes, escalas, RegraDeFrequencia.Padrao, hoje: new DateOnly(2026, 11, 20));
+// Antônio Ferreira (matrícula 4127), em 11/2026: 9 habilitações, e o mínimo é 12 — faltam 3 até 30/11/2026.
+// Trabalhou 2 períodos; 0 faltas sem justificativa, de 2 aceitas.
+```
+
 ## Roteiro
 
 O projeto é construído em partes, cada uma entregue funcionando, testada e documentada.
@@ -134,7 +173,7 @@ O projeto é construído em partes, cada uma entregue funcionando, testada e doc
 |--:|---|---|
 | 1 | Trabalhadores e requisições: matrícula, qualificações, exame médico e impedimentos, com o motivo de cada "não"; o pedido do operador com o navio, o local, o período e os ternos | ✅ |
 | 2 | A escala: a habilitação para o período, o rodízio pela ordem das matrículas, os registrados antes dos cadastrados, o descanso de onze horas e a explicação de cada escolha | ✅ |
-| 3 | Depois da escala: presença e falta, troca e desistência, a frequência mínima e o extrato do trabalhador, com o noturno e as provisões de férias, 13º e FGTS | |
+| 3 | Depois da escala: presença e falta, troca e desistência, a frequência mínima e o extrato do trabalhador, com o noturno e as provisões de férias, 13º e FGTS | ✅ |
 | 4 | Persistência com EF Core e PostgreSQL, testes com Testcontainers, e a escala que não põe ninguém em duas vagas ao mesmo tempo | |
 | 5 | API REST: entrada pela matrícula, papéis de trabalhador, escalador e operador, ProblemDetails, concorrência otimista e idempotência | |
 | 6 | O aplicativo do trabalhador, para o celular e para quem tem mais idade: "Minha escala" numa tela, letra grande, alto contraste, botões grandes, ouvir a escala, linguagem simples — com a acessibilidade conferida por teste | |
@@ -159,6 +198,13 @@ O projeto é construído em partes, cada uma entregue funcionando, testada e doc
 - **O descanso de onze horas**, contado no relógio, antes e depois de cada jornada marcada, com a hora em que ele termina: "o descanso de 11 horas só termina em 06/11/2026, à meia-noite". O mínimo é configurável, para a convenção.
 - **A escala, e o porquê de cada um.** A função com menos habilitados primeiro; em cada uma, os registrados e depois os cadastrados, com as vagas que sobraram. As requisições canceladas não entram, e as que chegaram depois do prazo ficam de fora, listadas. Cada habilitado sai com a vaga — navio, terminal, berço, terno, função — ou com os motivos: o descanso, a aptidão, as posições que faltaram no rodízio, as vagas que ficaram com os registrados, a função que ninguém pediu. As vagas vazias saem listadas para o operador, e a mesma entrada dá sempre a mesma escala.
 
+**Parte 3 — depois da escala**
+
+- **A desistência com substituto.** A escala guarda a fila de espera de cada função — os registrados e depois os cadastrados que podiam trabalhar e que o rodízio não alcançou. Quem desiste antes de o período começar dá a vaga ao primeiro da fila, e a vez anda até ele; sem ninguém na fila, a vaga entra nas vazias. Quem desiste não volta para a fila.
+- **A presença e a falta.** A presença é confirmada de uma hora antes do período até o fim dele; a falta, depois de o período começar, e pode ser justificada a qualquer tempo. Ao encerrar a escala, quem não teve a presença confirmada fica com falta, e só a justificativa muda alguma coisa dali em diante.
+- **A frequência do mês.** As habilitações, os períodos trabalhados, as faltas e as desistências, contados nas escalações e nas escalas; o mínimo menor na proporção dos dias de férias, afastamento ou suspensão, arredondado a favor do trabalhador; e quanto falta, até quando: "faltam 3 até 30/11/2026". Cumprida, em andamento ou descumprida — e a medida disciplinar fica com o órgão gestor.
+- **O extrato do mês.** Cada período trabalhado, com o valor da função pela tabela da convenção, o adicional noturno e o prazo do pagamento, 48 horas depois do fim do serviço; no total, as provisões de férias com o terço e de 13º e o FGTS depositado. Falta e desistência não são pagas; a função sem valor na tabela é recusada, e não paga como zero.
+
 ## Decisões
 
 As decisões que mudam o desenho do sistema estão registradas em [`docs/adr`](docs/adr):
@@ -170,6 +216,9 @@ As decisões que mudam o desenho do sistema estão registradas em [`docs/adr`](d
 - [ADR-0005](docs/adr/0005-a-escalacao-e-a-habilitacao.md) — uma escalação por categoria e período, com o calendário dela; a habilitação sem corrida, e a aptidão conferida na hora.
 - [ADR-0006](docs/adr/0006-o-rodizio-e-o-descanso.md) — o rodízio pela ordem das matrículas, uma roda por função e inscrição; quem não pode perde a vez; o descanso contado no relógio, para os dois lados.
 - [ADR-0007](docs/adr/0007-a-escala.md) — a escala é uma conta: a função com menos habilitados primeiro, registrados antes de cadastrados, e a situação de cada habilitado, com o porquê.
+- [ADR-0008](docs/adr/0008-depois-da-escala.md) — depois da escala: a desistência dá a vaga ao primeiro da fila de espera; a presença, a falta e o encerramento.
+- [ADR-0009](docs/adr/0009-a-frequencia-do-mes.md) — a frequência do mês, contada nos fatos da escala, com o mínimo proporcional aos dias em que o trabalhador podia trabalhar.
+- [ADR-0010](docs/adr/0010-o-extrato-do-mes.md) — o extrato do mês: cada período trabalhado, o noturno, as provisões, o FGTS e o prazo de 48 horas; sem descontos e sem produção.
 
 E algumas que não precisaram de ADR:
 
@@ -188,6 +237,10 @@ E algumas que não precisaram de ADR:
 - **A roda girando setenta vezes**, com os mesmos sete habilitados e três vagas: depois de cada escala, quem trabalhou mais tem no máximo uma a mais que quem trabalhou menos.
 - **O descanso em tabela**: para cada turno e cada distância entre a jornada e o período, com 0, 6, 11, 12 e 13 horas de mínimo, quais períodos ficam impedidos.
 - **Trezentas escalas sorteadas**, com semente fixa — habilitados, funções, inscrições, suspensões, jornadas, requisições no prazo, fora dele e canceladas, e o rodízio parado em qualquer lugar. Em todas, conferido de fora: ninguém em duas vagas; cada um numa função em que se habilitou e que podia exercer; os escalados de cada roda são os primeiros da vez, pulando só quem não podia; nenhum cadastrado pega vaga que um registrado podia pegar; nenhuma vaga fica vazia com alguém que podia pegá-la; a vez para no último escalado; e toda vaga pedida está preenchida ou listada.
+- **A espera no limite**: o substituto que também desiste passa a vaga adiante; os registrados acabam e entra o cadastrado; a fila acaba e a vaga fica vazia; a desistência no instante em que o período começa já é falta.
+- **A presença e a falta no limite**: uma hora antes do período, o último instante dele, a presença e a falta que não se sobrepõem, o encerramento que transforma o que faltava em falta, e a justificativa que chega depois.
+- **A frequência em meses montados com escalas de verdade**: dias de férias, de suspensão, de afastamento sem fim e de inscrição cancelada, o mínimo proporcional arredondado para baixo, o mês aberto e o encerrado, e as faltas acima do limite.
+- **O extrato no centavo**: as provisões e o FGTS conferidos pela conta feita à parte, a noite que termina no mês seguinte e é do mês em que começa, e os prazos de pagamento.
 - **O exemplo deste README**, de ponta a ponta.
 - **Arquitetura.** O domínio só referencia a biblioteca padrão; toda classe pública é selada, estática ou abstrata; nenhuma propriedade tem `set` público; os valores não têm construtor público; os internos não são visíveis a ninguém; e todo agregado tem identidade própria.
 
@@ -203,12 +256,14 @@ dotnet test --solution EscalaAvulsos.slnx
 
 ```text
 src/EscalaAvulsos.Dominio/               regras do negócio, sem dependências
-  Comum/                                 exceção de domínio, identidade, relógio do porto e textos
+  Comum/                                 exceção de domínio, identidade, relógio do porto, mês, dinheiro e textos
   Identificacao/                         matrícula, CPF, CNPJ e número IMO
   Periodos/                              os quatro turnos e os períodos de seis horas
   Trabalhadores/                         trabalhador, funções, qualificações, exame, impedimentos e aptidão
   Requisicoes/                           requisição, ternos, operador portuário, navio e local
-  Escalacoes/                            escalação e habilitação, rodízio, descanso, o escalador e a escala
+  Escalacoes/                            escalação e habilitação, rodízio, descanso, o escalador, a escala e o que vem depois dela
+  Frequencias/                           a regra e a frequência do mês
+  Extratos/                              a tabela de remuneração e o extrato do mês
 tests/EscalaAvulsos.Dominio.Testes/      exemplos, propriedades e o exemplo deste README
 tests/EscalaAvulsos.Arquitetura.Testes/  regras que o domínio não pode quebrar
 docs/adr/                                decisões de arquitetura
