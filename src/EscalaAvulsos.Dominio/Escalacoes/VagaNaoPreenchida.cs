@@ -18,6 +18,16 @@ public sealed record VagaNaoPreenchida
         Quantidade = quantidade;
     }
 
+    /// <summary>A vaga de quem desistiu, quando não havia ninguém na espera.</summary>
+    internal VagaNaoPreenchida(Engajamento vaga, int quantidade)
+    {
+        Requisicao = vaga.Requisicao;
+        Navio = vaga.Navio;
+        Terno = vaga.Terno;
+        Funcao = vaga.Funcao;
+        Quantidade = quantidade;
+    }
+
     public RequisicaoId Requisicao { get; }
 
     public Navio Navio { get; }

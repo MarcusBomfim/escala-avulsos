@@ -80,6 +80,7 @@ public static class Escalador
 
         var engajamentos = new Dictionary<TrabalhadorId, Engajamento>();
         var motivos = habilitados.ToDictionary(habilitado => habilitado.Trabalhador.Id, _ => new List<MotivoNaEscala>());
+        var espera = new List<EsperaPorVaga>();
         var rodizioDepois = rodizio;
 
         // A função com menos habilitados primeiro; no empate, a que aparece antes nas requisições.
@@ -123,6 +124,9 @@ public static class Escalador
                     {
                         motivos[trabalhador.Id].Add(
                             semVagaNoComeco ? MotivoNaEscala.VagasComRegistrados(funcao) : MotivoNaEscala.NaoAlcancado(funcao, posicao - posicaoDoUltimoEscalado));
+
+                        // Podia trabalhar e a vez não chegou: é quem fica na espera, se alguém desistir.
+                        espera.Add(new EsperaPorVaga(trabalhador.Id, funcao, inscricao, matricula));
                     }
                     else
                     {
@@ -156,7 +160,8 @@ public static class Escalador
             NaoPreenchidas(vagas),
             situacoes,
             [.. foraDoPrazo.Select(requisicao => requisicao.Id)],
-            rodizioDepois);
+            rodizioDepois,
+            [.. espera.Where(esperando => !engajamentos.ContainsKey(esperando.Trabalhador))]);
     }
 
     /// <summary>As vagas, uma a uma, na ordem das requisições, dos ternos e da composição de cada terno.</summary>

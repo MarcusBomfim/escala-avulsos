@@ -22,6 +22,21 @@ public sealed record Engajamento
         Terno = terno;
     }
 
+    /// <summary>A mesma vaga, com outro trabalhador: o substituto de quem desistiu.</summary>
+    private Engajamento(Engajamento vaga, SituacaoNaEscala substituto)
+    {
+        Trabalhador = substituto.Trabalhador;
+        Matricula = substituto.Matricula;
+        Nome = substituto.Nome;
+        Funcao = vaga.Funcao;
+        Requisicao = vaga.Requisicao;
+        Operador = vaga.Operador;
+        Navio = vaga.Navio;
+        Local = vaga.Local;
+        Periodo = vaga.Periodo;
+        Terno = vaga.Terno;
+    }
+
     public TrabalhadorId Trabalhador { get; }
 
     public Matricula Matricula { get; }
@@ -51,4 +66,6 @@ public sealed record Engajamento
 
     /// <summary>"Antônio Ferreira (matrícula 4127): sinaleiro no terno 1 do navio Atlântico Sul (IMO 9876543), …".</summary>
     public override string ToString() => $"{Nome} (matrícula {Matricula}): {Vaga}";
+
+    internal Engajamento Para(SituacaoNaEscala substituto) => new(this, substituto);
 }
