@@ -1,4 +1,5 @@
 using EscalaAvulsos.Dominio.Trabalhadores;
+using EscalaAvulsos.Infraestrutura.Persistencia.Idempotencia;
 using EscalaAvulsos.Infraestrutura.Persistencia.Registros;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
@@ -40,6 +41,8 @@ public sealed class ContextoDoBanco(DbContextOptions<ContextoDoBanco> opcoes) : 
     internal DbSet<RegistroDeEngajamento> Engajamentos => Set<RegistroDeEngajamento>();
 
     internal DbSet<RegistroDoRodizio> Rodizios => Set<RegistroDoRodizio>();
+
+    internal DbSet<RegistroDeIdempotencia> ChavesDeIdempotencia => Set<RegistroDeIdempotencia>();
 
     /// <summary>
     /// O Npgsql configurado como as migrações esperam — com o histórico delas
@@ -103,6 +106,25 @@ public sealed class ContextoDoBanco(DbContextOptions<ContextoDoBanco> opcoes) : 
 
         MapearEngajamentos(modelBuilder);
         MapearRodizios(modelBuilder);
+        MapearChavesDeIdempotencia(modelBuilder);
+    }
+
+    /// <summary>A chave de idempotência de cada pedido de criação, de quem pediu, com a resposta dada a ele (ADR-0015).</summary>
+    private static void MapearChavesDeIdempotencia(ModelBuilder modelBuilder)
+    {
+        var chaves = modelBuilder.Entity<RegistroDeIdempotencia>();
+
+        chaves.ToTable("chaves_de_idempotencia", tabela =>
+            tabela.HasCheckConstraint("ck_chaves_de_idempotencia_chave", "length(chave) between 1 and 255"));
+
+        chaves.HasKey(registro => new { registro.Dono, registro.Chave }).HasName("pk_chaves_de_idempotencia");
+        chaves.Property(registro => registro.Dono).HasColumnName("dono").HasMaxLength(255);
+        chaves.Property(registro => registro.Chave).HasColumnName("chave").HasMaxLength(Idempotencia.ChavesDeIdempotencia.TamanhoMaximoDaChave);
+        chaves.Property(registro => registro.ImpressaoDoPedido).HasColumnName("impressao_do_pedido").HasMaxLength(64);
+        chaves.Property(registro => registro.Status).HasColumnName("status");
+        chaves.Property(registro => registro.Cabecalhos).HasColumnName("cabecalhos").HasColumnType("jsonb");
+        chaves.Property(registro => registro.Corpo).HasColumnName("corpo");
+        chaves.Property(registro => registro.CriadaEm).HasColumnName("criada_em");
     }
 
     /// <summary>

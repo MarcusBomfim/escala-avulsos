@@ -24,6 +24,49 @@ namespace EscalaAvulsos.Infraestrutura.Persistencia.Migracoes
             NpgsqlModelBuilderExtensions.HasPostgresExtension(modelBuilder, "btree_gist");
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
+            modelBuilder.Entity("EscalaAvulsos.Infraestrutura.Persistencia.Idempotencia.RegistroDeIdempotencia", b =>
+                {
+                    b.Property<string>("Dono")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("dono");
+
+                    b.Property<string>("Chave")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("chave");
+
+                    b.Property<string>("Cabecalhos")
+                        .HasColumnType("jsonb")
+                        .HasColumnName("cabecalhos");
+
+                    b.Property<string>("Corpo")
+                        .HasColumnType("text")
+                        .HasColumnName("corpo");
+
+                    b.Property<DateTimeOffset>("CriadaEm")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("criada_em");
+
+                    b.Property<string>("ImpressaoDoPedido")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)")
+                        .HasColumnName("impressao_do_pedido");
+
+                    b.Property<short?>("Status")
+                        .HasColumnType("smallint")
+                        .HasColumnName("status");
+
+                    b.HasKey("Dono", "Chave")
+                        .HasName("pk_chaves_de_idempotencia");
+
+                    b.ToTable("chaves_de_idempotencia", "escala", t =>
+                        {
+                            t.HasCheckConstraint("ck_chaves_de_idempotencia_chave", "length(chave) between 1 and 255");
+                        });
+                });
+
             modelBuilder.Entity("EscalaAvulsos.Infraestrutura.Persistencia.Registros.RegistroDeEngajamento", b =>
                 {
                     b.Property<Guid>("EscalaId")
