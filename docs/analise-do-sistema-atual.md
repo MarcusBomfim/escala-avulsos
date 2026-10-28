@@ -8,7 +8,7 @@ Este projeto não tem ligação com o OGMO/Santos. O nome do órgão aparece aqu
 
 - **O site institucional** ([www97.ogmo-santos.com.br](https://www97.ogmo-santos.com.br/)) foi visto por inteiro na página inicial: os menus, as notícias "Atenção TPA", os acessos "ACESSO TPA" e "OGMO ON" (as duas entradas com login), a Escala Digital, o PAD Digital, o PPP eletrônico e um PDF sobre limpeza de cache no Android e no iOS.
 - **A página da Escala Digital** pediu uma verificação anti-robô, e o site passou a recusar os acessos seguintes. A verificação não foi contornada: o que se diz da Escala Digital aqui vem das notícias sobre ela.
-- **A área logada** — a escala, a habilitação, o extrato — exige matrícula e senha, e não foi acessada. O que se diz dela vem do relato de quem a usa.
+- **A área logada** — a escala, a habilitação, o extrato — fica em [www50.ogmo-santos.com.br](https://www50.ogmo-santos.com.br/), que leva à entrada em `/erp/Login/`, com matrícula e senha. Em 28/10/2026 ela parou numa verificação de segurança ("confirme que é humano"), que não foi contornada, e por trás dela não foi acessada. O que se diz dela vem do relato de quem a usa.
 - **O aplicativo "Ogmo Santos Digital"**, publicado pela Container Solution, não está mais na Google Play: a página dele responde "não encontrado".
 
 ## Como a escala funciona hoje
@@ -53,7 +53,7 @@ A acessibilidade não fica na intenção: a Parte 6 confere por teste o contrast
 
 ## Fontes
 
-- OGMO/Santos — [página inicial](https://www97.ogmo-santos.com.br/), [Escala Digital](https://www97.ogmo-santos.com.br/escaladigital/), [norma de frequência mínima](https://www97.ogmo-santos.com.br/norma-de-frequencia-minima/) e [limpeza de cache](https://www97.ogmo-santos.com.br/wp-content/uploads/2024/05/Limpeza-de-cache-Android-e-IOS.pdf).
+- OGMO/Santos — [página inicial](https://www97.ogmo-santos.com.br/), [entrada da área logada](https://www50.ogmo-santos.com.br/), [Escala Digital](https://www97.ogmo-santos.com.br/escaladigital/), [norma de frequência mínima](https://www97.ogmo-santos.com.br/norma-de-frequencia-minima/) e [limpeza de cache](https://www97.ogmo-santos.com.br/wp-content/uploads/2024/05/Limpeza-de-cache-Android-e-IOS.pdf).
 - [Lei 9.719/1998](https://www.planalto.gov.br/ccivil_03/leis/l9719.htm) e [Lei 12.815/2013](https://www.planalto.gov.br/ccivil_03/_ato2011-2014/2013/lei/l12815.htm).
 - [Datamar News, 2019 — a escala pelo celular no porto de Santos](https://www.datamarnews.com/noticias/scale-of-mobile-workers-is-implemented-in-the-port-of-santos/).
 - [Sopesp, 2025 — os 30 anos do OGMO e a digitalização](https://sopesp.com.br/2025/03/20/ogmo-completa-30-anos-e-destaca-digitalizacao-como-marco-da-decada/) e [Portos e Navios, 2025](https://www.portosenavios.com.br/noticias/portos-e-logistica/ogmo-santos-completa-30-anos-com-foco-na-digitalizacao-e-qualificacao-da-mao-de-obra).

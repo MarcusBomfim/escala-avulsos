@@ -55,14 +55,25 @@ public sealed class RepositorioDeEscalas(ContextoDoBanco contexto, TimeProvider 
     /// As escalas do mês em que o trabalhador aparece, com vaga ou sem, na
     /// ordem dos períodos — para a frequência e o extrato (ADR-0009, ADR-0010).
     /// </summary>
-    public async Task<IReadOnlyList<Escala>> DoTrabalhadorNoMes(TrabalhadorId trabalhador, Mes mes, CancellationToken cancelamento = default)
+    public Task<IReadOnlyList<Escala>> DoTrabalhadorNoMes(TrabalhadorId trabalhador, Mes mes, CancellationToken cancelamento = default)
+    {
+        ArgumentNullException.ThrowIfNull(mes);
+
+        return DoTrabalhadorEntre(trabalhador, mes.PrimeiroDia, mes.UltimoDia, cancelamento);
+    }
+
+    /// <summary>
+    /// As escalas em que o trabalhador aparece, com vaga ou sem, dos períodos
+    /// de um dia a outro, os dois incluídos, na ordem dos períodos — para a
+    /// tela "minha escala".
+    /// </summary>
+    public async Task<IReadOnlyList<Escala>> DoTrabalhadorEntre(TrabalhadorId trabalhador, DateOnly de, DateOnly ate, CancellationToken cancelamento = default)
     {
         ArgumentNullException.ThrowIfNull(trabalhador);
-        ArgumentNullException.ThrowIfNull(mes);
 
         var escalas = await _tabela.Consultar(
             registros => registros
-                .Where(registro => registro.Dia >= mes.PrimeiroDia && registro.Dia <= mes.UltimoDia && registro.Trabalhadores.Contains(trabalhador.Valor))
+                .Where(registro => registro.Dia >= de && registro.Dia <= ate && registro.Trabalhadores.Contains(trabalhador.Valor))
                 .OrderBy(registro => registro.Inicio)
                 .ThenBy(registro => registro.Categoria),
             registro => registro.ParaEscala(),

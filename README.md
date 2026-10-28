@@ -3,9 +3,9 @@
 [![CI](https://github.com/MarcusBomfim/escala-avulsos/actions/workflows/ci.yml/badge.svg)](https://github.com/MarcusBomfim/escala-avulsos/actions/workflows/ci.yml)
 [![Licença: MIT](https://img.shields.io/badge/licen%C3%A7a-MIT-blue.svg)](LICENSE)
 
-A escala do trabalhador portuário avulso, feita para o celular e para quem já não enxerga tão bem: o estivador abre o aplicativo e lê, numa frase, onde trabalha amanhã — ou por que ficou de fora, e até quando. Por trás da tela, o que a escala precisa saber: quem pode trabalhar em cada função, o pedido do operador portuário, o rodízio, o descanso entre jornadas, a frequência e o extrato, guardados num PostgreSQL que não deixa ninguém em duas jornadas — e, nas próximas partes, a API, o aplicativo e os avisos.
+A escala do trabalhador portuário avulso, feita para o celular e para quem já não enxerga tão bem: o estivador abre o aplicativo e lê, numa frase, onde trabalha amanhã — ou por que ficou de fora, e até quando. Por trás da tela, o que a escala precisa saber: quem pode trabalhar em cada função, o pedido do operador portuário, o rodízio, o descanso entre jornadas, a frequência e o extrato, guardados num PostgreSQL que não deixa ninguém em duas jornadas, e uma API em que cada um entra com o seu papel — e, nas próximas partes, o aplicativo e os avisos.
 
-C# 14 · .NET 10 · EF Core 10 · PostgreSQL 17 · Testcontainers · xUnit v3 · GitHub Actions
+C# 14 · .NET 10 · ASP.NET Core · EF Core 10 · PostgreSQL 17 · OpenAPI · Testcontainers · xUnit v3 · GitHub Actions
 
 > Projeto independente, de estudo e portfólio. Não tem ligação com o OGMO/Santos nem com nenhum órgão gestor de mão de obra; os nomes de pessoas, empresas, navios e terminais dos exemplos são inventados.
 
@@ -184,6 +184,58 @@ Benedito Lima (matrícula 4130) já tem jornada em 05/11/2026, das 13h às 19h, 
 de 11 horas entre elas. A escala não foi gravada: leia as jornadas de novo e refaça.
 ```
 
+### Pela API
+
+Cada um faz a sua parte do seu lado, com o token do seu papel. A tarde de quinta inteira, pela API, está em [`TardeDeQuintaPelaApi`](tests/EscalaAvulsos.Api.Testes/TardeDeQuintaPelaApi.cs), e o que cada um vê, nos testes ao lado.
+
+1. O órgão gestor cadastra o trabalhador pela matrícula:
+
+   ```http
+   POST /api/trabalhadores
+   { "matricula": 4127, "nome": "Antônio Ferreira", "cpf": "529.984.127-26", "categoria": "Estiva", "inscricao": "Registrado" }
+   ```
+
+2. A Cais Forte pede a mão de obra em nome do CNPJ do token, com uma chave que torna a repetição segura:
+
+   ```http
+   POST /api/requisicoes
+   Idempotency-Key: 0f8c2b6e-…
+   { "categoria": "Estiva", "navio": { "nome": "Atlântico Sul", "imo": "IMO 9876543" }, "local": { "terminal": "Terminal Cais Leste", "berco": "4" },
+     "dia": "2026-11-05", "turno": "Tarde", "ternos": [[{ "funcao": "Sinaleiro", "quantidade": 1 }, { "funcao": "Estivador", "quantidade": 2 }]] }
+   ```
+
+3. O órgão gestor abre a escalação:
+
+   ```http
+   PUT /api/escalacoes/Estiva/2026-11-05/Tarde
+   ```
+
+4. O Antônio se habilita pelo celular, sem versão e sem "tente de novo":
+
+   ```http
+   PUT /api/eu/habilitacoes/2026-11-05/Tarde
+   { "funcoes": ["Sinaleiro", "Estivador"] }
+   ```
+
+5. Às 10h, o órgão gestor faz a escala:
+
+   ```http
+   POST /api/escalacoes/Estiva/2026-11-05/Tarde/escala
+   ```
+
+6. O Antônio abre a escala dele:
+
+   ```http
+   GET /api/eu/escalas
+   ```
+
+   ```text
+   Antônio Ferreira (matrícula 4127) está na escala: sinaleiro no terno 1 do navio Atlântico Sul (IMO 9876543), no Terminal
+   Cais Leste, berço 4, em 05/11/2026, das 13h às 19h.
+   ```
+
+O Carlos, que ficou de fora, lê o motivo, e que é o primeiro da espera de estivador e de sinaleiro. Se o Edson desistir, `POST /api/eu/escalas/{id}/desistencia`, a vaga é do Carlos.
+
 ## Roteiro
 
 O projeto é construído em partes, cada uma entregue funcionando, testada e documentada.
@@ -194,7 +246,7 @@ O projeto é construído em partes, cada uma entregue funcionando, testada e doc
 | 2 | A escala: a habilitação para o período, o rodízio pela ordem das matrículas, os registrados antes dos cadastrados, o descanso de onze horas e a explicação de cada escolha | ✅ |
 | 3 | Depois da escala: presença e falta, troca e desistência, a frequência mínima e o extrato do trabalhador, com o noturno e as provisões de férias, 13º e FGTS | ✅ |
 | 4 | Persistência com EF Core e PostgreSQL, testes com Testcontainers, e a escala que não põe ninguém em duas vagas ao mesmo tempo | ✅ |
-| 5 | API REST: entrada pela matrícula, papéis de trabalhador, escalador e operador, ProblemDetails, concorrência otimista e idempotência | |
+| 5 | API REST: entrada pela matrícula, papéis de trabalhador, escalador e operador, ProblemDetails, concorrência otimista e idempotência | ✅ |
 | 6 | O aplicativo do trabalhador, para o celular e para quem tem mais idade: "Minha escala" numa tela, letra grande, alto contraste, botões grandes, ouvir a escala, linguagem simples — com a acessibilidade conferida por teste | |
 | 7 | Avisos e tempo real: notificação quando sai a escala e antes de fechar a habilitação, a escala ao vivo e o painel do escalador e do operador | |
 | 8 | Observabilidade, Docker e entrega contínua | |
@@ -235,6 +287,18 @@ O projeto é construído em partes, cada uma entregue funcionando, testada e doc
 - **O rodízio sem corrida.** Cada categoria tem uma linha com a escala mais recente e uma versão; duas escalas feitas ao mesmo tempo do mesmo ponto não gravam as duas, e a desistência que anda a vez sobe a versão.
 - **As consultas da escala**: o trabalhador pela matrícula, os habilitados de uma escalação, as requisições do período, as jornadas perto de um período, o rodízio da categoria, e as escalações e escalas de um trabalhador no mês, de onde saem a frequência e o extrato.
 
+**Parte 5 — a API**
+
+- **Cada um entra com o seu papel.** O token do provedor de identidade traz o papel: trabalhador, com a matrícula; escalador, do órgão gestor; ou operador, com o CNPJ. O trabalhador usa `/api/eu`, sem matrícula no caminho, e não alcança os dados de outro. O operador só enxerga as requisições do CNPJ dele.
+- **O trabalhador no celular**: o cadastro dele, a janela da habilitação, a habilitação nas funções que escolher, a escala da semana — com a vaga, ou o motivo de ter ficado de fora e o lugar na espera —, a desistência e o mês, com a frequência e o extrato.
+- **O órgão gestor**: o cadastro pela matrícula, com as qualificações, o exame, os impedimentos, o registro e o cancelamento; a escalação de cada categoria e período; a escala; e a presença, a falta, a justificativa e o encerramento.
+- **O operador**: a requisição de mão de obra, a leitura e o cancelamento.
+- **Ninguém grava por cima do que não viu.** A versão de cada registro é a ETag; o órgão gestor e o operador alteram com `If-Match`, e a versão velha é 412, com a atual no corpo.
+- **O trabalhador não lida com versão.** A habilitação e a desistência são só dele: se outro gravou no meio, o servidor lê de novo e refaz. Vinte se habilitam no mesmo instante, e os vinte recebem a resposta de primeira.
+- **A requisição repetida não vira duas.** A criação leva `Idempotency-Key`, e o pedido repetido recebe a resposta da primeira vez.
+- **Todo erro em ProblemDetails**, de um [catálogo](docs/api/problemas.md), com a frase do domínio no detalhe. A entrada é estrita, como a leitura do banco.
+- **O contrato no repositório**, em [`docs/api/openapi.json`](docs/api/openapi.json), conferido por teste.
+
 ## Decisões
 
 As decisões que mudam o desenho do sistema estão registradas em [`docs/adr`](docs/adr):
@@ -252,6 +316,9 @@ As decisões que mudam o desenho do sistema estão registradas em [`docs/adr`](d
 - [ADR-0011](docs/adr/0011-os-agregados-gravados-voltam-pelas-regras.md) — cada agregado é um documento JSON de formato conferido, e o que volta do banco passa pelas regras; a escala guarda o descanso, que vale para o substituto.
 - [ADR-0012](docs/adr/0012-o-banco-e-a-concorrencia.md) — o PostgreSQL guarda os documentos e confere o que consegue sem repetir regra; concorrência otimista com a versão num comando só.
 - [ADR-0013](docs/adr/0013-ninguem-em-duas-jornadas.md) — as vagas numa tabela com restrição de exclusão, contado o descanso; o rodízio de cada categoria com versão.
+- [ADR-0014](docs/adr/0014-o-contrato-http.md) — o contrato HTTP: entrada pela matrícula, três papéis, a versão na ETag, o erro em ProblemDetails, e cada gravação declarando o que exige.
+- [ADR-0015](docs/adr/0015-a-criacao-repetida-e-a-gravacao-que-o-servidor-refaz.md) — a chave de idempotência na criação sem identidade natural; e a habilitação, que o servidor relê e refaz.
+- [ADR-0016](docs/adr/0016-a-escala-pela-api.md) — a escala pela API: o órgão gestor com versão; o trabalhador numa semana, sem versão; e o contrato escrito no repositório.
 
 E algumas que não precisaram de ADR:
 
@@ -278,6 +345,13 @@ E algumas que não precisaram de ADR:
 - **Os documentos**: gravar, ler e gravar de novo dá o mesmo JSON, para cada agregado, com tudo o que ele pode ter — e a escala lida continua de onde parou. O formato de cada um está escrito por extenso. E mais de sessenta documentos adulterados, um para cada regra que a leitura confere, são recusados com a mensagem certa.
 - **Um PostgreSQL de verdade**, num contêiner, com um banco para cada teste copiado de um modelo já migrado. O teste confere que toda mudança no modelo tem migração. Confere o que o banco recusa mesmo em SQL à mão, e que o papel da aplicação lê e grava, mas não muda o esquema.
 - **As corridas, cada gravação na sua conexão**: dez gravações a partir da mesma versão, e passa uma; vinte habilitações no mesmo instante, e ficam as vinte; duas escalas da categoria do mesmo rodízio, e grava uma; duas desistências que escolhem o mesmo substituto, e o banco dá a vaga a uma só.
+- **A API inteira**, em memória, com um banco só para cada teste, e os tokens assinados ali mesmo:
+  - quem não tem token, e quem tem o papel errado;
+  - cada problema do catálogo;
+  - a tarde de quinta feita pelos três papéis;
+  - a requisição repetida dez vezes ao mesmo tempo, que cria uma só;
+  - vinte habilitações e duas desistências ao mesmo tempo, sem nenhum "tente de novo".
+- **Os endpoints conferidos um a um**: todos têm política; todo endpoint que grava declara uma coisa só, entre a versão lida, a chave e o motivo de dispensar as duas; o documento OpenAPI descreve os cabeçalhos; e o contrato publicado é o que a API serve.
 - **Arquitetura.** O domínio só referencia a biblioteca padrão; toda classe pública é selada, estática ou abstrata; nenhuma propriedade tem `set` público; os valores não têm construtor público; os internos só são visíveis à persistência; e todo agregado tem identidade própria.
 
 ## Como rodar
@@ -298,9 +372,42 @@ dotnet tool restore
 dotnet ef migrations add NomeDaMudanca --project src/EscalaAvulsos.Infraestrutura --output-dir Persistencia/Migracoes
 ```
 
+Para a API, primeiro o banco num PostgreSQL local, na porta 5433, para não esbarrar no de outro projeto:
+
+```bash
+docker run -d --name escala-avulsos-db -e POSTGRES_PASSWORD=postgres -p 5433:5432 postgres:17.6-alpine
+```
+
+```bash
+dotnet ef database update --project src/EscalaAvulsos.Infraestrutura --connection "Host=localhost;Port=5433;Database=escala_avulsos;Username=postgres;Password=postgres"
+```
+
+Depois a API, em `http://localhost:5300`; o contrato fica em `/openapi/v1.json`:
+
+```bash
+dotnet run --project src/EscalaAvulsos.Api
+```
+
+E um token de desenvolvimento, do papel que quiser. Por exemplo, do trabalhador da matrícula 4127:
+
+```bash
+dotnet user-jwts create --project src/EscalaAvulsos.Api --role trabalhador --claim matricula=4127
+```
+
+A configuração do porto fica em `appsettings.json`, na seção `Porto`: os horários da escalação, o descanso entre jornadas, a frequência mínima e a tabela de remuneração. Quando a API muda de propósito, o contrato publicado é regravado pelo próprio teste:
+
+```bash
+ESCALA_ATUALIZAR_CONTRATO=1 dotnet test --solution EscalaAvulsos.slnx
+```
+
 ## Estrutura
 
 ```text
+src/EscalaAvulsos.Api/                      a API REST: o contrato HTTP, a segurança e os recursos
+  Hospedagem/                               os serviços, o caminho de cada pedido, a documentação e a configuração do porto
+  Http/                                     os problemas, a versão na ETag, as convenções e a idempotência
+  Seguranca/                                os papéis, as políticas e quem pede, lido do token
+  Recursos/                                 o trabalhador em /api/eu, os trabalhadores, as requisições, as escalações e as escalas
 src/EscalaAvulsos.Dominio/                  regras do negócio, sem dependências
   Comum/                                    exceção de domínio, identidade, relógio do porto, mês, dinheiro e textos
   Identificacao/                            matrícula, CPF, CNPJ e número IMO
@@ -313,11 +420,13 @@ src/EscalaAvulsos.Dominio/                  regras do negócio, sem dependência
 src/EscalaAvulsos.Infraestrutura/           o que o domínio não sabe
   Documentos/                               o formato JSON de cada agregado, e a leitura estrita
   Persistencia/                             o contexto do banco, os repositórios, a concorrência e as migrações
+tests/EscalaAvulsos.Api.Testes/             a API inteira, em memória, com um banco por teste
 tests/EscalaAvulsos.Dominio.Testes/         exemplos, propriedades e o exemplo deste README
 tests/EscalaAvulsos.Infraestrutura.Testes/  os documentos, e o PostgreSQL de verdade num contêiner
 tests/EscalaAvulsos.Arquitetura.Testes/     regras que o domínio não pode quebrar
 docs/adr/                                   decisões de arquitetura
 docs/analise-do-sistema-atual.md            o sistema de hoje, o que os usuários relatam e o que muda aqui
+docs/api/                                   o catálogo dos problemas e o contrato OpenAPI publicado
 ```
 
 ## Licença

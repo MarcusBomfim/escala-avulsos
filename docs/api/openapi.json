@@ -1,0 +1,2479 @@
+{
+  "openapi": "3.1.1",
+  "info": {
+    "title": "Escala dos Avulsos",
+    "description": "A escala do trabalhador portuário avulso: o cadastro, as requisições dos operadores, a habilitação, a escala, a presença e a falta, a frequência e o extrato. Toda chamada leva um JWT com o papel de quem pede — e a matrícula do trabalhador, ou o CNPJ do operador; os erros vêm em ProblemDetails (RFC 9457).",
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "http://localhost/"
+    }
+  ],
+  "paths": {
+    "/api/escalacoes/{categoria}/{dia}/{turno}/escala": {
+      "post": {
+        "tags": [
+          "Escalas"
+        ],
+        "description": "A escalação identifica a escala: fazer de novo é recusado com 409. Se outra escala da categoria andou o rodízio no meio, ou um habilitado pegou outra jornada, o servidor lê de novo e refaz.",
+        "parameters": [
+          {
+            "name": "categoria",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "dia",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "turno",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EscalaResposta"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "Escalas"
+        ],
+        "parameters": [
+          {
+            "name": "categoria",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "dia",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "turno",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EscalaResposta"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/escalas/{id}": {
+      "get": {
+        "tags": [
+          "Escalas"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EscalaResposta"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/escalas/{id}/presencas": {
+      "post": {
+        "tags": [
+          "Escalas"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "If-Match",
+            "in": "header",
+            "description": "A versão lida — a ETag da leitura, como \"3\". Sem ela, 428; desatualizada, 412.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TrabalhadorDaEscala"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EscalaResposta"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/escalas/{id}/faltas": {
+      "post": {
+        "tags": [
+          "Escalas"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "If-Match",
+            "in": "header",
+            "description": "A versão lida — a ETag da leitura, como \"3\". Sem ela, 428; desatualizada, 412.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TrabalhadorDaEscala"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EscalaResposta"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/escalas/{id}/justificativas": {
+      "post": {
+        "tags": [
+          "Escalas"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "If-Match",
+            "in": "header",
+            "description": "A versão lida — a ETag da leitura, como \"3\". Sem ela, 428; desatualizada, 412.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/JustificativaDaFalta"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EscalaResposta"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/escalas/{id}/encerramento": {
+      "post": {
+        "tags": [
+          "Escalas"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "If-Match",
+            "in": "header",
+            "description": "A versão lida — a ETag da leitura, como \"3\". Sem ela, 428; desatualizada, 412.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EscalaResposta"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/eu/escalas": {
+      "get": {
+        "tags": [
+          "Eu"
+        ],
+        "parameters": [
+          {
+            "name": "de",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/MinhaEscalaResposta"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/eu/escalas/{id}/desistencia": {
+      "post": {
+        "tags": [
+          "Eu"
+        ],
+        "description": "A desistência é só de quem pede: se outro gravou na escala no meio, o servidor lê de novo — com as jornadas de agora de quem espera — e refaz.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MinhaEscalaResposta"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/eu/meses/{mes}": {
+      "get": {
+        "tags": [
+          "Eu"
+        ],
+        "parameters": [
+          {
+            "name": "mes",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MeuMesResposta"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/eu/habilitacoes/{dia}/{turno}": {
+      "get": {
+        "tags": [
+          "Eu"
+        ],
+        "parameters": [
+          {
+            "name": "dia",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "turno",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MinhaHabilitacaoResposta"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Eu"
+        ],
+        "description": "A habilitação é só de quem pede: se outro trabalhador se habilitou no meio, o servidor lê a escalação de novo e refaz — a vez é pela matrícula, e não pela ordem de chegada.",
+        "parameters": [
+          {
+            "name": "dia",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "turno",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PedidoDeHabilitacao"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MinhaHabilitacaoResposta"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Eu"
+        ],
+        "description": "A habilitação é só de quem pede: se outro trabalhador se habilitou no meio, o servidor lê a escalação de novo e refaz — a vez é pela matrícula, e não pela ordem de chegada.",
+        "parameters": [
+          {
+            "name": "dia",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "turno",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MinhaHabilitacaoResposta"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/escalacoes/{categoria}/{dia}/{turno}": {
+      "put": {
+        "tags": [
+          "Escalações"
+        ],
+        "description": "A categoria e o período identificam a escalação: abrir de novo devolve a que já está aberta, sem abrir outra.",
+        "parameters": [
+          {
+            "name": "categoria",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "dia",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "turno",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EscalacaoResposta"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EscalacaoResposta"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "Escalações"
+        ],
+        "parameters": [
+          {
+            "name": "categoria",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "dia",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "turno",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EscalacaoResposta"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/escalacoes/{categoria}/{dia}/{turno}/requisicoes": {
+      "get": {
+        "tags": [
+          "Escalações"
+        ],
+        "parameters": [
+          {
+            "name": "categoria",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "dia",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "turno",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/RequisicaoResposta"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/requisicoes": {
+      "post": {
+        "tags": [
+          "Requisições"
+        ],
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "description": "Um valor único por operação — um UUID —, repetido em cada nova tentativa. A repetição recebe a resposta da primeira vez.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NovaRequisicao"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RequisicaoResposta"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/requisicoes/{id}": {
+      "get": {
+        "tags": [
+          "Requisições"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RequisicaoResposta"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/requisicoes/{id}/cancelamento": {
+      "post": {
+        "tags": [
+          "Requisições"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "If-Match",
+            "in": "header",
+            "description": "A versão lida — a ETag da leitura, como \"3\". Sem ela, 428; desatualizada, 412.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CancelamentoDaRequisicao"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RequisicaoResposta"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/trabalhadores": {
+      "post": {
+        "tags": [
+          "Trabalhadores"
+        ],
+        "description": "A matrícula identifica o trabalhador: cadastrar de novo a mesma matrícula é recusado com 409, e não cria outro.",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NovoTrabalhador"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TrabalhadorResposta"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/trabalhadores/{matricula}": {
+      "get": {
+        "tags": [
+          "Trabalhadores"
+        ],
+        "parameters": [
+          {
+            "name": "matricula",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TrabalhadorResposta"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/trabalhadores/{matricula}/qualificacoes": {
+      "post": {
+        "tags": [
+          "Trabalhadores"
+        ],
+        "parameters": [
+          {
+            "name": "matricula",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "If-Match",
+            "in": "header",
+            "description": "A versão lida — a ETag da leitura, como \"3\". Sem ela, 428; desatualizada, 412.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NovaQualificacao"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TrabalhadorResposta"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/trabalhadores/{matricula}/aso": {
+      "put": {
+        "tags": [
+          "Trabalhadores"
+        ],
+        "parameters": [
+          {
+            "name": "matricula",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "If-Match",
+            "in": "header",
+            "description": "A versão lida — a ETag da leitura, como \"3\". Sem ela, 428; desatualizada, 412.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NovoAso"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TrabalhadorResposta"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/trabalhadores/{matricula}/impedimentos": {
+      "post": {
+        "tags": [
+          "Trabalhadores"
+        ],
+        "parameters": [
+          {
+            "name": "matricula",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "If-Match",
+            "in": "header",
+            "description": "A versão lida — a ETag da leitura, como \"3\". Sem ela, 428; desatualizada, 412.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NovoImpedimento"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TrabalhadorResposta"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/trabalhadores/{matricula}/fim-do-afastamento": {
+      "post": {
+        "tags": [
+          "Trabalhadores"
+        ],
+        "parameters": [
+          {
+            "name": "matricula",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "If-Match",
+            "in": "header",
+            "description": "A versão lida — a ETag da leitura, como \"3\". Sem ela, 428; desatualizada, 412.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FimDoAfastamento"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TrabalhadorResposta"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/trabalhadores/{matricula}/registro": {
+      "post": {
+        "tags": [
+          "Trabalhadores"
+        ],
+        "parameters": [
+          {
+            "name": "matricula",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "If-Match",
+            "in": "header",
+            "description": "A versão lida — a ETag da leitura, como \"3\". Sem ela, 428; desatualizada, 412.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TrabalhadorResposta"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/trabalhadores/{matricula}/cancelamento": {
+      "post": {
+        "tags": [
+          "Trabalhadores"
+        ],
+        "parameters": [
+          {
+            "name": "matricula",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "If-Match",
+            "in": "header",
+            "description": "A versão lida — a ETag da leitura, como \"3\". Sem ela, 428; desatualizada, 412.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NovoCancelamento"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TrabalhadorResposta"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/eu": {
+      "get": {
+        "tags": [
+          "Eu"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TrabalhadorResposta"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "AsoResposta": {
+        "required": [
+          "emitidoEm",
+          "validoAte"
+        ],
+        "type": "object",
+        "properties": {
+          "emitidoEm": {
+            "type": "string",
+            "format": "date"
+          },
+          "validoAte": {
+            "type": "string",
+            "format": "date"
+          }
+        },
+        "additionalProperties": false
+      },
+      "CancelamentoDaRequisicao": {
+        "required": [
+          "motivo"
+        ],
+        "type": "object",
+        "properties": {
+          "motivo": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "CancelamentoResposta": {
+        "required": [
+          "aPartirDe",
+          "motivo"
+        ],
+        "type": "object",
+        "properties": {
+          "aPartirDe": {
+            "type": "string",
+            "format": "date"
+          },
+          "motivo": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "Categoria": {
+        "enum": [
+          "Capatazia",
+          "Estiva",
+          "ConferenciaDeCarga",
+          "ConsertoDeCarga",
+          "VigilanciaDeEmbarcacoes",
+          "Bloco"
+        ]
+      },
+      "Comparecimento": {
+        "enum": [
+          "Aguardando",
+          "Presente",
+          "Falta",
+          "FaltaJustificada"
+        ]
+      },
+      "EscalacaoResposta": {
+        "required": [
+          "categoria",
+          "periodo",
+          "prazoDasRequisicoes",
+          "aberturaDaHabilitacao",
+          "fechamentoDaHabilitacao",
+          "habilitacoes"
+        ],
+        "type": "object",
+        "properties": {
+          "categoria": {
+            "$ref": "#/components/schemas/Categoria"
+          },
+          "periodo": {
+            "$ref": "#/components/schemas/PeriodoResposta"
+          },
+          "prazoDasRequisicoes": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "aberturaDaHabilitacao": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "fechamentoDaHabilitacao": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "habilitacoes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/HabilitacaoResposta"
+            }
+          }
+        },
+        "additionalProperties": false
+      },
+      "EscalaResposta": {
+        "required": [
+          "id",
+          "descricao",
+          "categoria",
+          "periodo",
+          "feitaEm",
+          "encerradaEm",
+          "descanso",
+          "vagasPedidas",
+          "vagas",
+          "vagasNaoPreenchidas",
+          "situacoes",
+          "espera",
+          "requisicoesForaDoPrazo"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "descricao": {
+            "type": "string"
+          },
+          "categoria": {
+            "$ref": "#/components/schemas/Categoria"
+          },
+          "periodo": {
+            "$ref": "#/components/schemas/PeriodoResposta"
+          },
+          "feitaEm": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "encerradaEm": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "descanso": {
+            "pattern": "^-?(\\d+\\.)?\\d{2}:\\d{2}:\\d{2}(\\.\\d{1,7})?$",
+            "type": "string"
+          },
+          "vagasPedidas": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "vagas": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SituacaoResposta"
+            }
+          },
+          "vagasNaoPreenchidas": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/VagasVaziasResposta"
+            }
+          },
+          "situacoes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SituacaoResposta"
+            }
+          },
+          "espera": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/EsperaResposta"
+            }
+          },
+          "requisicoesForaDoPrazo": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        },
+        "additionalProperties": false
+      },
+      "EsperaResposta": {
+        "required": [
+          "funcao",
+          "matriculas"
+        ],
+        "type": "object",
+        "properties": {
+          "funcao": {
+            "type": "string"
+          },
+          "matriculas": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        },
+        "additionalProperties": false
+      },
+      "ExtratoResposta": {
+        "required": [
+          "descricao",
+          "linhas",
+          "remuneracao",
+          "ferias",
+          "decimoTerceiro",
+          "fgts"
+        ],
+        "type": "object",
+        "properties": {
+          "descricao": {
+            "type": "string"
+          },
+          "linhas": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LinhaDoExtratoResposta"
+            }
+          },
+          "remuneracao": {
+            "type": "number",
+            "format": "double"
+          },
+          "ferias": {
+            "type": "number",
+            "format": "double"
+          },
+          "decimoTerceiro": {
+            "type": "number",
+            "format": "double"
+          },
+          "fgts": {
+            "type": "number",
+            "format": "double"
+          }
+        },
+        "additionalProperties": false
+      },
+      "FimDoAfastamento": {
+        "required": [
+          "volta"
+        ],
+        "type": "object",
+        "properties": {
+          "volta": {
+            "type": "string",
+            "format": "date"
+          }
+        },
+        "additionalProperties": false
+      },
+      "FrequenciaResposta": {
+        "required": [
+          "descricao",
+          "situacao",
+          "habilitacoes",
+          "minimoDeHabilitacoes",
+          "habilitacoesQueFaltam",
+          "trabalhados",
+          "faltas",
+          "faltasJustificadas",
+          "maximoDeFaltas",
+          "desistencias",
+          "diasImpedidos"
+        ],
+        "type": "object",
+        "properties": {
+          "descricao": {
+            "type": "string"
+          },
+          "situacao": {
+            "$ref": "#/components/schemas/SituacaoDaFrequencia"
+          },
+          "habilitacoes": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "minimoDeHabilitacoes": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "habilitacoesQueFaltam": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "trabalhados": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "faltas": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "faltasJustificadas": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "maximoDeFaltas": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "desistencias": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "diasImpedidos": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "additionalProperties": false
+      },
+      "HabilitacaoResposta": {
+        "required": [
+          "matricula",
+          "funcoes",
+          "em"
+        ],
+        "type": "object",
+        "properties": {
+          "matricula": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "funcoes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "em": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "additionalProperties": false
+      },
+      "ImpedimentoResposta": {
+        "required": [
+          "tipo",
+          "de",
+          "ate",
+          "observacao",
+          "descricao"
+        ],
+        "type": "object",
+        "properties": {
+          "tipo": {
+            "$ref": "#/components/schemas/TipoDeImpedimento"
+          },
+          "de": {
+            "type": "string",
+            "format": "date"
+          },
+          "ate": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date"
+          },
+          "observacao": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "descricao": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "Inscricao": {
+        "enum": [
+          "Cadastrado",
+          "Registrado"
+        ]
+      },
+      "JustificativaDaFalta": {
+        "required": [
+          "matricula",
+          "justificativa"
+        ],
+        "type": "object",
+        "properties": {
+          "matricula": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "justificativa": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "LinhaDoExtratoResposta": {
+        "required": [
+          "descricao",
+          "periodo",
+          "funcao",
+          "navio",
+          "terno",
+          "valor",
+          "adicionalNoturno",
+          "total",
+          "pagoAte"
+        ],
+        "type": "object",
+        "properties": {
+          "descricao": {
+            "type": "string"
+          },
+          "periodo": {
+            "$ref": "#/components/schemas/PeriodoResposta"
+          },
+          "funcao": {
+            "type": "string"
+          },
+          "navio": {
+            "$ref": "#/components/schemas/NavioResposta"
+          },
+          "terno": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "valor": {
+            "type": "number",
+            "format": "double"
+          },
+          "adicionalNoturno": {
+            "type": "number",
+            "format": "double"
+          },
+          "total": {
+            "type": "number",
+            "format": "double"
+          },
+          "pagoAte": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "additionalProperties": false
+      },
+      "LocalDaRequisicao": {
+        "required": [
+          "terminal"
+        ],
+        "type": "object",
+        "properties": {
+          "terminal": {
+            "type": "string"
+          },
+          "berco": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        },
+        "additionalProperties": false
+      },
+      "LocalResposta": {
+        "required": [
+          "terminal",
+          "berco"
+        ],
+        "type": "object",
+        "properties": {
+          "terminal": {
+            "type": "string"
+          },
+          "berco": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        },
+        "additionalProperties": false
+      },
+      "MeuMesResposta": {
+        "required": [
+          "mes",
+          "frequencia",
+          "extrato"
+        ],
+        "type": "object",
+        "properties": {
+          "mes": {
+            "type": "string"
+          },
+          "frequencia": {
+            "$ref": "#/components/schemas/FrequenciaResposta"
+          },
+          "extrato": {
+            "$ref": "#/components/schemas/ExtratoResposta"
+          }
+        },
+        "additionalProperties": false
+      },
+      "MinhaEscalaResposta": {
+        "required": [
+          "escala",
+          "categoria",
+          "periodo",
+          "encerrada",
+          "situacao",
+          "espera"
+        ],
+        "type": "object",
+        "properties": {
+          "escala": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "categoria": {
+            "$ref": "#/components/schemas/Categoria"
+          },
+          "periodo": {
+            "$ref": "#/components/schemas/PeriodoResposta"
+          },
+          "encerrada": {
+            "type": "boolean"
+          },
+          "situacao": {
+            "$ref": "#/components/schemas/SituacaoResposta"
+          },
+          "espera": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PosicaoNaEspera"
+            }
+          }
+        },
+        "additionalProperties": false
+      },
+      "MinhaHabilitacaoResposta": {
+        "required": [
+          "periodo",
+          "abreEm",
+          "fechaEm",
+          "janelaAberta",
+          "habilitado",
+          "funcoes",
+          "em"
+        ],
+        "type": "object",
+        "properties": {
+          "periodo": {
+            "$ref": "#/components/schemas/PeriodoResposta"
+          },
+          "abreEm": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "fechaEm": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "janelaAberta": {
+            "type": "boolean"
+          },
+          "habilitado": {
+            "type": "boolean"
+          },
+          "funcoes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "em": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          }
+        },
+        "additionalProperties": false
+      },
+      "MotivoResposta": {
+        "required": [
+          "tipo",
+          "funcao",
+          "descricao"
+        ],
+        "type": "object",
+        "properties": {
+          "tipo": {
+            "$ref": "#/components/schemas/TipoDeMotivoNaEscala"
+          },
+          "funcao": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "descricao": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "NavioDaRequisicao": {
+        "required": [
+          "nome",
+          "imo"
+        ],
+        "type": "object",
+        "properties": {
+          "nome": {
+            "type": "string"
+          },
+          "imo": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "NavioResposta": {
+        "required": [
+          "nome",
+          "imo"
+        ],
+        "type": "object",
+        "properties": {
+          "nome": {
+            "type": "string"
+          },
+          "imo": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "NovaQualificacao": {
+        "required": [
+          "funcao",
+          "desde"
+        ],
+        "type": "object",
+        "properties": {
+          "funcao": {
+            "type": "string"
+          },
+          "desde": {
+            "type": "string",
+            "format": "date"
+          },
+          "validaAte": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date"
+          }
+        },
+        "additionalProperties": false
+      },
+      "NovaRequisicao": {
+        "required": [
+          "categoria",
+          "navio",
+          "local",
+          "dia",
+          "turno",
+          "ternos"
+        ],
+        "type": "object",
+        "properties": {
+          "categoria": {
+            "$ref": "#/components/schemas/Categoria"
+          },
+          "navio": {
+            "$ref": "#/components/schemas/NavioDaRequisicao"
+          },
+          "local": {
+            "$ref": "#/components/schemas/LocalDaRequisicao"
+          },
+          "dia": {
+            "type": "string",
+            "format": "date"
+          },
+          "turno": {
+            "$ref": "#/components/schemas/Turno"
+          },
+          "ternos": {
+            "type": "array",
+            "items": {
+              "type": "array",
+              "items": {
+                "$ref": "#/components/schemas/VagasPedidas"
+              }
+            }
+          }
+        },
+        "additionalProperties": false
+      },
+      "NovoAso": {
+        "required": [
+          "emitidoEm",
+          "validoAte"
+        ],
+        "type": "object",
+        "properties": {
+          "emitidoEm": {
+            "type": "string",
+            "format": "date"
+          },
+          "validoAte": {
+            "type": "string",
+            "format": "date"
+          }
+        },
+        "additionalProperties": false
+      },
+      "NovoCancelamento": {
+        "required": [
+          "aPartirDe",
+          "motivo"
+        ],
+        "type": "object",
+        "properties": {
+          "aPartirDe": {
+            "type": "string",
+            "format": "date"
+          },
+          "motivo": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "NovoImpedimento": {
+        "required": [
+          "tipo",
+          "de"
+        ],
+        "type": "object",
+        "properties": {
+          "tipo": {
+            "$ref": "#/components/schemas/TipoDeImpedimento"
+          },
+          "de": {
+            "type": "string",
+            "format": "date"
+          },
+          "ate": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date"
+          },
+          "observacao": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        },
+        "additionalProperties": false
+      },
+      "NovoTrabalhador": {
+        "required": [
+          "matricula",
+          "nome",
+          "cpf",
+          "categoria",
+          "inscricao"
+        ],
+        "type": "object",
+        "properties": {
+          "matricula": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "nome": {
+            "type": "string"
+          },
+          "cpf": {
+            "type": "string"
+          },
+          "categoria": {
+            "$ref": "#/components/schemas/Categoria"
+          },
+          "inscricao": {
+            "$ref": "#/components/schemas/Inscricao"
+          }
+        },
+        "additionalProperties": false
+      },
+      "OperadorResposta": {
+        "required": [
+          "nome",
+          "cnpj"
+        ],
+        "type": "object",
+        "properties": {
+          "nome": {
+            "type": "string"
+          },
+          "cnpj": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "PedidoDeHabilitacao": {
+        "required": [
+          "funcoes"
+        ],
+        "type": "object",
+        "properties": {
+          "funcoes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "additionalProperties": false
+      },
+      "PeriodoResposta": {
+        "required": [
+          "dia",
+          "turno",
+          "descricao",
+          "inicio",
+          "fim"
+        ],
+        "type": "object",
+        "properties": {
+          "dia": {
+            "type": "string",
+            "format": "date"
+          },
+          "turno": {
+            "$ref": "#/components/schemas/Turno"
+          },
+          "descricao": {
+            "type": "string"
+          },
+          "inicio": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "fim": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "additionalProperties": false
+      },
+      "PosicaoNaEspera": {
+        "required": [
+          "funcao",
+          "posicao"
+        ],
+        "type": "object",
+        "properties": {
+          "funcao": {
+            "type": "string"
+          },
+          "posicao": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "additionalProperties": false
+      },
+      "QualificacaoResposta": {
+        "required": [
+          "funcao",
+          "desde",
+          "validaAte"
+        ],
+        "type": "object",
+        "properties": {
+          "funcao": {
+            "type": "string"
+          },
+          "desde": {
+            "type": "string",
+            "format": "date"
+          },
+          "validaAte": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date"
+          }
+        },
+        "additionalProperties": false
+      },
+      "RequisicaoResposta": {
+        "required": [
+          "id",
+          "descricao",
+          "operador",
+          "navio",
+          "local",
+          "periodo",
+          "categoria",
+          "ternos",
+          "totalDeVagas",
+          "feitaEm",
+          "situacao",
+          "motivoDoCancelamento",
+          "canceladaEm"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "descricao": {
+            "type": "string"
+          },
+          "operador": {
+            "$ref": "#/components/schemas/OperadorResposta"
+          },
+          "navio": {
+            "$ref": "#/components/schemas/NavioResposta"
+          },
+          "local": {
+            "$ref": "#/components/schemas/LocalResposta"
+          },
+          "periodo": {
+            "$ref": "#/components/schemas/PeriodoResposta"
+          },
+          "categoria": {
+            "$ref": "#/components/schemas/Categoria"
+          },
+          "ternos": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TernoResposta"
+            }
+          },
+          "totalDeVagas": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "feitaEm": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "situacao": {
+            "$ref": "#/components/schemas/SituacaoDaRequisicao"
+          },
+          "motivoDoCancelamento": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "canceladaEm": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          }
+        },
+        "additionalProperties": false
+      },
+      "SituacaoDaFrequencia": {
+        "enum": [
+          "Cumprida",
+          "EmAndamento",
+          "Descumprida"
+        ]
+      },
+      "SituacaoDaRequisicao": {
+        "enum": [
+          "Aberta",
+          "Cancelada"
+        ]
+      },
+      "SituacaoResposta": {
+        "required": [
+          "matricula",
+          "nome",
+          "frase",
+          "vaga",
+          "substituto",
+          "vagaDesistida",
+          "desistiuEm",
+          "comparecimento",
+          "presenteDesde",
+          "justificativaDaFalta",
+          "motivos"
+        ],
+        "type": "object",
+        "properties": {
+          "matricula": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "nome": {
+            "type": "string"
+          },
+          "frase": {
+            "type": "string"
+          },
+          "vaga": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/VagaResposta"
+              }
+            ]
+          },
+          "substituto": {
+            "type": "boolean"
+          },
+          "vagaDesistida": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/VagaResposta"
+              }
+            ]
+          },
+          "desistiuEm": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "comparecimento": {
+            "$ref": "#/components/schemas/Comparecimento"
+          },
+          "presenteDesde": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "justificativaDaFalta": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "motivos": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MotivoResposta"
+            }
+          }
+        },
+        "additionalProperties": false
+      },
+      "TernoResposta": {
+        "required": [
+          "numero",
+          "vagas"
+        ],
+        "type": "object",
+        "properties": {
+          "numero": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "vagas": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/VagasPedidas"
+            }
+          }
+        },
+        "additionalProperties": false
+      },
+      "TipoDeImpedimento": {
+        "enum": [
+          "Ferias",
+          "Afastamento",
+          "Suspensao"
+        ]
+      },
+      "TipoDeMotivoNaEscala": {
+        "enum": [
+          "EmDescanso",
+          "NaoApto",
+          "NaoAlcancado",
+          "VagasComRegistrados",
+          "SemVagaNaFuncao"
+        ]
+      },
+      "TrabalhadorDaEscala": {
+        "required": [
+          "matricula"
+        ],
+        "type": "object",
+        "properties": {
+          "matricula": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "additionalProperties": false
+      },
+      "TrabalhadorResposta": {
+        "required": [
+          "matricula",
+          "nome",
+          "cpf",
+          "categoria",
+          "inscricao",
+          "qualificacoes",
+          "aso",
+          "impedimentos",
+          "cancelamento"
+        ],
+        "type": "object",
+        "properties": {
+          "matricula": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "nome": {
+            "type": "string"
+          },
+          "cpf": {
+            "type": "string"
+          },
+          "categoria": {
+            "$ref": "#/components/schemas/Categoria"
+          },
+          "inscricao": {
+            "$ref": "#/components/schemas/Inscricao"
+          },
+          "qualificacoes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/QualificacaoResposta"
+            }
+          },
+          "aso": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/AsoResposta"
+              }
+            ]
+          },
+          "impedimentos": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ImpedimentoResposta"
+            }
+          },
+          "cancelamento": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/CancelamentoResposta"
+              }
+            ]
+          }
+        },
+        "additionalProperties": false
+      },
+      "Turno": {
+        "enum": [
+          "Madrugada",
+          "Manha",
+          "Tarde",
+          "Noite"
+        ]
+      },
+      "VagaResposta": {
+        "required": [
+          "funcao",
+          "terno",
+          "requisicao",
+          "navio",
+          "local",
+          "operador"
+        ],
+        "type": "object",
+        "properties": {
+          "funcao": {
+            "type": "string"
+          },
+          "terno": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "requisicao": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "navio": {
+            "$ref": "#/components/schemas/NavioResposta"
+          },
+          "local": {
+            "$ref": "#/components/schemas/LocalResposta"
+          },
+          "operador": {
+            "$ref": "#/components/schemas/OperadorResposta"
+          }
+        },
+        "additionalProperties": false
+      },
+      "VagasPedidas": {
+        "required": [
+          "funcao",
+          "quantidade"
+        ],
+        "type": "object",
+        "properties": {
+          "funcao": {
+            "type": "string"
+          },
+          "quantidade": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "additionalProperties": false
+      },
+      "VagasVaziasResposta": {
+        "required": [
+          "funcao",
+          "terno",
+          "quantidade",
+          "requisicao",
+          "navio",
+          "operador",
+          "descricao"
+        ],
+        "type": "object",
+        "properties": {
+          "funcao": {
+            "type": "string"
+          },
+          "terno": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "quantidade": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "requisicao": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "navio": {
+            "$ref": "#/components/schemas/NavioResposta"
+          },
+          "operador": {
+            "$ref": "#/components/schemas/OperadorResposta"
+          },
+          "descricao": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "securitySchemes": {
+      "Bearer": {
+        "type": "http",
+        "description": "Token do provedor de identidade, com as reivindicações role e, conforme o papel, matricula ou cnpj.",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    }
+  },
+  "security": [
+    {
+      "Bearer": []
+    }
+  ],
+  "tags": [
+    {
+      "name": "Escalas"
+    },
+    {
+      "name": "Eu"
+    },
+    {
+      "name": "Escalações"
+    },
+    {
+      "name": "Requisições"
+    },
+    {
+      "name": "Trabalhadores"
+    }
+  ]
+}
