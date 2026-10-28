@@ -9,32 +9,23 @@ namespace EscalaAvulsos.Dominio.Escalacoes;
 public sealed record Engajamento
 {
     internal Engajamento(Trabalhador trabalhador, Funcao funcao, Requisicao requisicao, int terno)
+        : this(trabalhador.Id, trabalhador.Matricula, trabalhador.Nome, funcao, RequisicaoNaEscala.De(requisicao), requisicao.Periodo, terno)
     {
-        Trabalhador = trabalhador.Id;
-        Matricula = trabalhador.Matricula;
-        Nome = trabalhador.Nome;
+    }
+
+    /// <summary>A vaga, com quem está nela: a da escala, a do substituto, a que a escala gravada refaz.</summary>
+    internal Engajamento(TrabalhadorId trabalhador, Matricula matricula, string nome, Funcao funcao, RequisicaoNaEscala requisicao, Periodo periodo, int terno)
+    {
+        Trabalhador = trabalhador;
+        Matricula = matricula;
+        Nome = nome;
         Funcao = funcao;
         Requisicao = requisicao.Id;
         Operador = requisicao.Operador;
         Navio = requisicao.Navio;
         Local = requisicao.Local;
-        Periodo = requisicao.Periodo;
+        Periodo = periodo;
         Terno = terno;
-    }
-
-    /// <summary>A mesma vaga, com outro trabalhador: o substituto de quem desistiu.</summary>
-    private Engajamento(Engajamento vaga, SituacaoNaEscala substituto)
-    {
-        Trabalhador = substituto.Trabalhador;
-        Matricula = substituto.Matricula;
-        Nome = substituto.Nome;
-        Funcao = vaga.Funcao;
-        Requisicao = vaga.Requisicao;
-        Operador = vaga.Operador;
-        Navio = vaga.Navio;
-        Local = vaga.Local;
-        Periodo = vaga.Periodo;
-        Terno = vaga.Terno;
     }
 
     public TrabalhadorId Trabalhador { get; }
@@ -67,5 +58,12 @@ public sealed record Engajamento
     /// <summary>"Antônio Ferreira (matrícula 4127): sinaleiro no terno 1 do navio Atlântico Sul (IMO 9876543), …".</summary>
     public override string ToString() => $"{Nome} (matrícula {Matricula}): {Vaga}";
 
-    internal Engajamento Para(SituacaoNaEscala substituto) => new(this, substituto);
+    /// <summary>A requisição, o terno e a função, sem quem está na vaga.</summary>
+    internal VagaGravada Gravada => new(Requisicao, Terno, Funcao);
+
+    internal RequisicaoNaEscala DaRequisicao => new(Requisicao, Operador, Navio, Local);
+
+    /// <summary>A mesma vaga, com outro trabalhador: o substituto de quem desistiu.</summary>
+    internal Engajamento Para(SituacaoNaEscala substituto) =>
+        new(substituto.Trabalhador, substituto.Matricula, substituto.Nome, Funcao, DaRequisicao, Periodo, Terno);
 }

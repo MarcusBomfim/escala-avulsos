@@ -6,4 +6,12 @@
   <PropertyGroup>
     <RootNamespace>EscalaAvulsos.Dominio</RootNamespace>
   </PropertyGroup>
+  <!--
+    Só a persistência enxerga os internos: é ela que refaz os agregados
+    gravados, com a identidade que eles já tinham (ADR-0011). Os testes do
+    domínio continuam pela porta da frente.
+  -->
+  <ItemGroup>
+    <InternalsVisibleTo Include="EscalaAvulsos.Infraestrutura" />
+  </ItemGroup>
 </Project>

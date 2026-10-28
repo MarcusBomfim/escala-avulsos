@@ -1,3 +1,4 @@
+using EscalaAvulsos.Dominio.Comum;
 using EscalaAvulsos.Dominio.Trabalhadores;
 
 namespace EscalaAvulsos.Dominio.Escalacoes;
@@ -94,4 +95,36 @@ public sealed record MotivoNaEscala
 
     internal static MotivoNaEscala SemVagaNaFuncao(Funcao funcao) =>
         new(TipoDeMotivoNaEscala.SemVagaNaFuncao, funcao, $"como {funcao.NaFrase}, não houve vaga neste período");
+
+    /// <summary>
+    /// Refaz o motivo gravado pela fábrica do tipo, que escreve a frase de novo
+    /// (ADR-0011) — se o que veio com ele é o que o tipo traz, e só isso.
+    /// </summary>
+    internal static MotivoNaEscala Reconstituir(
+        TipoDeMotivoNaEscala tipo,
+        Funcao? funcao,
+        int? posicoesAntesDaVez,
+        IReadOnlyList<Motivo> motivosDaAptidao,
+        ConflitoDeDescanso? descanso)
+    {
+        var semMais = posicoesAntesDaVez is null && motivosDaAptidao.Count == 0 && descanso is null;
+
+        return (tipo, funcao) switch
+        {
+            (TipoDeMotivoNaEscala.EmDescanso, null) when descanso is not null && posicoesAntesDaVez is null && motivosDaAptidao.Count == 0 => EmDescanso(descanso),
+            (TipoDeMotivoNaEscala.NaoApto, { } naFuncao) when motivosDaAptidao.Count > 0 && posicoesAntesDaVez is null && descanso is null => NaoApto(naFuncao, motivosDaAptidao),
+            (TipoDeMotivoNaEscala.NaoAlcancado, { } naFuncao) when posicoesAntesDaVez >= 1 && motivosDaAptidao.Count == 0 && descanso is null => NaoAlcancado(naFuncao, posicoesAntesDaVez.Value),
+            (TipoDeMotivoNaEscala.VagasComRegistrados, { } naFuncao) when semMais => VagasComRegistrados(naFuncao),
+            (TipoDeMotivoNaEscala.SemVagaNaFuncao, { } naFuncao) when semMais => SemVagaNaFuncao(naFuncao),
+            _ => throw new ExcecaoDeDominio($"O motivo {tipo}{(funcao is null ? string.Empty : $", de {funcao.NaFrase},")} não traz o que o tipo pede: {OQueOTipoPede(tipo)}."),
+        };
+    }
+
+    private static string OQueOTipoPede(TipoDeMotivoNaEscala tipo) => tipo switch
+    {
+        TipoDeMotivoNaEscala.EmDescanso => "a jornada que pede descanso, sem função",
+        TipoDeMotivoNaEscala.NaoApto => "a função e os motivos da aptidão",
+        TipoDeMotivoNaEscala.NaoAlcancado => "a função e as posições antes da vez, a partir de 1",
+        _ => "a função, e só ela",
+    };
 }

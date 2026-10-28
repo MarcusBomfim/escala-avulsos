@@ -219,7 +219,7 @@ public sealed class FrequenciaDoMesTests
         public void Desistir(int dia)
         {
             var escala = Escalar(Periodo.De(new DateOnly(2026, 11, dia), Turno.Manha));
-            escala.Desistir(Antonio.Id, escala.Periodo.Inicio.AddHours(-1));
+            escala.Desistir(Antonio.Id, escala.Periodo.Inicio.AddHours(-1), []);
         }
 
         public FrequenciaDoMes Frequencia(DateOnly hoje, RegraDeFrequencia? regra = null) =>

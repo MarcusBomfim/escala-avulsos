@@ -137,6 +137,27 @@ public sealed record Motivo
             _ => new(TipoDeMotivo.Suspensao, $"cumpre suspensão {Dias(impedimento)}", impedimento.De, impedimento.Ate),
         };
 
+    /// <summary>
+    /// O motivo gravado com a escala, como foi dito naquela hora: a frase não é
+    /// refeita, porque o que a explicava — o exame, as férias — pode ter mudado
+    /// desde então (ADR-0011).
+    /// </summary>
+    internal static Motivo Reconstituir(TipoDeMotivo tipo, string descricao, DateOnly? de, DateOnly? ate)
+    {
+        if (string.IsNullOrWhiteSpace(descricao))
+        {
+            throw new ExcecaoDeDominio($"O motivo {tipo} não tem a frase que o explica.");
+        }
+
+        if (de is { } primeiro && ate is { } ultimo && ultimo < primeiro)
+        {
+            throw new ExcecaoDeDominio(
+                $"O motivo {tipo} impede de {FormatoBrasileiro.Data(primeiro)} a {FormatoBrasileiro.Data(ultimo)}: o último dia é antes do primeiro.");
+        }
+
+        return new(tipo, descricao, de, ate);
+    }
+
     private static string Dias(Impedimento impedimento) =>
         impedimento.Ate is { } ultimo
             ? $"de {FormatoBrasileiro.Data(impedimento.De)} a {FormatoBrasileiro.Data(ultimo)}"

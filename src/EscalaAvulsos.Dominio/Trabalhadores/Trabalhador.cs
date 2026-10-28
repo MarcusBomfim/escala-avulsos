@@ -75,6 +75,14 @@ public sealed class Trabalhador
         Inscricao = dados.Inscricao;
     }
 
+    private Trabalhador(TrabalhadorId id, DadosDoTrabalhador dados)
+        : this(dados)
+    {
+        ArgumentNullException.ThrowIfNull(id);
+
+        Id = id;
+    }
+
     public TrabalhadorId Id { get; }
 
     public Matricula Matricula { get; }
@@ -219,6 +227,53 @@ public sealed class Trabalhador
 
     /// <summary>"Antônio Ferreira (matrícula 4127)".</summary>
     public override string ToString() => $"{Nome} (matrícula {Matricula})";
+
+    /// <summary>
+    /// Refaz o trabalhador gravado pelos mesmos passos de quem o cadastrou: as
+    /// qualificações, o exame, os impedimentos e, por último, o cancelamento —
+    /// cada um pelas regras de sempre (ADR-0011).
+    /// </summary>
+    internal static Trabalhador Reconstituir(
+        TrabalhadorId id,
+        DadosDoTrabalhador dados,
+        IReadOnlyList<Qualificacao> qualificacoes,
+        Aso? aso,
+        IReadOnlyList<Impedimento> impedimentos,
+        CancelamentoDaInscricao? cancelamento)
+    {
+        ArgumentNullException.ThrowIfNull(qualificacoes);
+        ArgumentNullException.ThrowIfNull(impedimentos);
+
+        var trabalhador = new Trabalhador(id, dados);
+
+        // Qualificar de novo na mesma função renova a qualificação; gravadas, duas são um erro, e não uma renovação.
+        if (qualificacoes.GroupBy(qualificacao => qualificacao.Funcao).FirstOrDefault(funcao => funcao.Count() > 1) is { } repetida)
+        {
+            throw new ExcecaoDeDominio($"{trabalhador} tem {repetida.Count()} qualificações de {repetida.Key.NaFrase}.");
+        }
+
+        foreach (var qualificacao in qualificacoes)
+        {
+            trabalhador.Qualificar(qualificacao.Funcao, qualificacao.Desde, qualificacao.ValidaAte);
+        }
+
+        if (aso is not null)
+        {
+            trabalhador.RegistrarAso(aso);
+        }
+
+        foreach (var impedimento in impedimentos)
+        {
+            trabalhador.Impedir(impedimento);
+        }
+
+        if (cancelamento is not null)
+        {
+            trabalhador.CancelarInscricao(cancelamento.APartirDe, cancelamento.Motivo);
+        }
+
+        return trabalhador;
+    }
 
     private IEnumerable<Motivo> MotivosContra(Funcao funcao, DateOnly dia)
     {

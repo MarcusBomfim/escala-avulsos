@@ -169,7 +169,7 @@ public sealed class ExemploDoReadmeTests
         Assert.Equal(
             "Benedito Lima (matrícula 4130) está na escala, no lugar de quem desistiu: estivador no terno 1 do navio Atlântico Sul (IMO 9876543), "
             + "no Terminal Cais Leste, berço 4, em 05/11/2026, das 13h às 19h.",
-            escala.Desistir(quinta.Edson.Id, QuintaAs10h.AddHours(1))?.ToString());
+            escala.Desistir(quinta.Edson.Id, QuintaAs10h.AddHours(1), [])?.ToString());
 
         escala.ConfirmarPresenca(quinta.Antonio.Id, QuintaAs10h.AddHours(2));
         escala.ConfirmarPresenca(quinta.Benedito.Id, QuintaAs10h.AddHours(2.5));

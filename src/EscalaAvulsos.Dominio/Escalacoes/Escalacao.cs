@@ -39,6 +39,14 @@ public sealed class Escalacao
         Calendario = calendario;
     }
 
+    private Escalacao(EscalacaoId id, Categoria categoria, Periodo periodo, CalendarioDaEscalacao calendario)
+        : this(categoria, periodo, calendario)
+    {
+        ArgumentNullException.ThrowIfNull(id);
+
+        Id = id;
+    }
+
     public EscalacaoId Id { get; }
 
     public Categoria Categoria { get; }
@@ -124,6 +132,66 @@ public sealed class Escalacao
 
     /// <summary>"escala da estiva de 05/11/2026, das 13h às 19h".</summary>
     public override string ToString() => $"escala {Categoria.ComDe} de {Periodo}";
+
+    /// <summary>
+    /// Refaz a escalação gravada. As habilitações não passam de novo pela
+    /// aptidão — valiam quando foram feitas, e o trabalhador de hoje pode não
+    /// ser o daquele dia —, mas passam pelo resto: a janela, ao menos uma
+    /// função, sem repetir, e uma habilitação por trabalhador (ADR-0011).
+    /// </summary>
+    /// <remarks>As funções chegam da categoria da escalação: é com ela que a gravação as refaz.</remarks>
+    internal static Escalacao Reconstituir(
+        EscalacaoId id,
+        Categoria categoria,
+        Periodo periodo,
+        CalendarioDaEscalacao calendario,
+        IReadOnlyList<Habilitacao> habilitacoes)
+    {
+        ArgumentNullException.ThrowIfNull(habilitacoes);
+
+        var escalacao = new Escalacao(id, categoria, periodo, calendario);
+        var problemas = new List<string>();
+
+        foreach (var repetido in habilitacoes.GroupBy(habilitacao => habilitacao.Trabalhador).Where(grupo => grupo.Count() > 1))
+        {
+            problemas.Add($"A matrícula {repetido.First().Matricula} tem {repetido.Count()} habilitações na {escalacao}.");
+        }
+
+        foreach (var repetida in habilitacoes.DistinctBy(habilitacao => habilitacao.Trabalhador).GroupBy(habilitacao => habilitacao.Matricula).Where(grupo => grupo.Count() > 1))
+        {
+            problemas.Add($"A matrícula {repetida.Key} é de {repetida.Count()} trabalhadores habilitados.");
+        }
+
+        foreach (var habilitacao in habilitacoes)
+        {
+            var daMatricula = $"A habilitação da matrícula {habilitacao.Matricula}";
+
+            if (!escalacao.HabilitacaoAbertaEm(habilitacao.Em))
+            {
+                problemas.Add(
+                    $"{daMatricula} foi feita em {FormatoBrasileiro.Instante(habilitacao.Em)}, fora da janela, que abre em {FormatoBrasileiro.Instante(escalacao.AberturaDaHabilitacao)}, e fecha em {FormatoBrasileiro.Instante(escalacao.FechamentoDaHabilitacao)}.");
+            }
+
+            if (habilitacao.Funcoes.Count == 0)
+            {
+                problemas.Add($"{daMatricula} não tem função nenhuma.");
+            }
+
+            foreach (var repetida in habilitacao.Funcoes.GroupBy(funcao => funcao).Where(grupo => grupo.Count() > 1))
+            {
+                problemas.Add($"{daMatricula} repete {repetida.Key.NaFrase}.");
+            }
+        }
+
+        if (problemas.Count > 0)
+        {
+            throw new ExcecaoDeDominio(string.Join(" ", problemas));
+        }
+
+        escalacao._habilitacoes.AddRange(habilitacoes);
+
+        return escalacao;
+    }
 
     private void ExigirHabilitacaoAberta(DateTimeOffset em)
     {

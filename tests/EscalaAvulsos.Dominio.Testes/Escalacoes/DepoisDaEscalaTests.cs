@@ -1,6 +1,7 @@
 using EscalaAvulsos.Dominio.Comum;
 using EscalaAvulsos.Dominio.Escalacoes;
 using EscalaAvulsos.Dominio.Identificacao;
+using EscalaAvulsos.Dominio.Periodos;
 using EscalaAvulsos.Dominio.Requisicoes;
 using EscalaAvulsos.Dominio.Testes.Trabalhadores;
 using EscalaAvulsos.Dominio.Trabalhadores;
@@ -31,7 +32,7 @@ public sealed class DepoisDaEscalaTests
         var tarde = new TardeDeQuinta();
         var escala = tarde.Escalar();
 
-        var substituto = escala.Desistir(tarde.Edson.Id, Em(5, 11));
+        var substituto = escala.Desistir(tarde.Edson.Id, Em(5, 11), []);
 
         Assert.Equal($"Benedito Lima (matrícula 4130) está na escala, no lugar de quem desistiu: {Vaga}.", substituto?.ToString());
         Assert.Equal("Edson Prado (matrícula 4101) desistiu da vaga de estivador em 05/11/2026, às 11h.", escala.SituacaoDe(Matricula.De(4101))?.ToString());
@@ -50,9 +51,9 @@ public sealed class DepoisDaEscalaTests
     {
         var tarde = new TardeDeQuinta();
         var escala = tarde.Escalar();
-        escala.Desistir(tarde.Edson.Id, Em(5, 11));
+        escala.Desistir(tarde.Edson.Id, Em(5, 11), []);
 
-        var joao = escala.Desistir(tarde.Carlos.Id, Em(5, 11, 30));
+        var joao = escala.Desistir(tarde.Carlos.Id, Em(5, 11, 30), []);
 
         Assert.Equal($"João Batista (matrícula 5310) está na escala, no lugar de quem desistiu: {Vaga}.", joao?.ToString());
         Assert.Equal(5310, escala.RodizioDepois.UltimoEscalado(Funcoes.Estivador, Inscricao.Cadastrado)?.Numero);
@@ -65,12 +66,12 @@ public sealed class DepoisDaEscalaTests
     {
         var tarde = new TardeDeQuinta();
         var escala = tarde.Escalar();
-        escala.Desistir(tarde.Edson.Id, Em(5, 11));
-        escala.Desistir(tarde.Carlos.Id, Em(5, 11));
+        escala.Desistir(tarde.Edson.Id, Em(5, 11), []);
+        escala.Desistir(tarde.Carlos.Id, Em(5, 11), []);
 
-        Assert.Null(escala.Desistir(tarde.Benedito.Id, Em(5, 12)));
-        Assert.Null(escala.Desistir(tarde.Joao.Id, Em(5, 12)));
-        Assert.Null(escala.Desistir(tarde.Antonio.Id, Em(5, 12)));
+        Assert.Null(escala.Desistir(tarde.Benedito.Id, Em(5, 12), []));
+        Assert.Null(escala.Desistir(tarde.Joao.Id, Em(5, 12), []));
+        Assert.Null(escala.Desistir(tarde.Antonio.Id, Em(5, 12), []));
 
         Assert.Empty(escala.Engajamentos);
         Assert.Equal(
@@ -90,8 +91,8 @@ public sealed class DepoisDaEscalaTests
         var requisicao = new Requisicao(TardeDeQuinta.DaTarde, [[new(Funcoes.Estivador, 1)], [new(Funcoes.Estivador, 1)]], Testes.Requisicoes.RequisicoesDeTeste.QuartaAs10h);
         var escala = Escalador.Escalar(escalacao, [requisicao], [antonio, benedito], [], Rodizio.Novo, Descanso.DaLei, Em(5, 10));
 
-        escala.Desistir(antonio.Id, Em(5, 11));
-        escala.Desistir(benedito.Id, Em(5, 11));
+        escala.Desistir(antonio.Id, Em(5, 11), []);
+        escala.Desistir(benedito.Id, Em(5, 11), []);
 
         Assert.Equal(
             ["estivador: 1, no terno 1 do navio Atlântico Sul (IMO 9876543)", "estivador: 1, no terno 2 do navio Atlântico Sul (IMO 9876543)"],
@@ -103,13 +104,64 @@ public sealed class DepoisDaEscalaTests
     {
         var tarde = new TardeDeQuinta();
         var escala = tarde.Escalar();
-        escala.Desistir(tarde.Edson.Id, Em(5, 11));
+        escala.Desistir(tarde.Edson.Id, Em(5, 11), []);
 
-        var joao = escala.Desistir(tarde.Benedito.Id, Em(5, 11, 30));
+        var joao = escala.Desistir(tarde.Benedito.Id, Em(5, 11, 30), []);
 
         Assert.Equal("João Batista", joao?.Nome);
         Assert.Equal("Benedito Lima (matrícula 4130) desistiu da vaga de estivador em 05/11/2026, às 11h30.", escala.SituacaoDe(Matricula.De(4130))?.ToString());
         Assert.Empty(escala.FilaDeEsperaDe(Funcoes.Estivador));
+    }
+
+    [Fact]
+    public void Quem_espera_e_pegou_jornada_em_outra_escala_sem_o_descanso_e_pulado()
+    {
+        /*
+         * Depois desta escala, o Benedito pegou a noite de quinta em outra, e
+         * ficaria sem as 11 horas de descanso: a vaga do Edson vai para o João.
+         * O Benedito continua na fila — a jornada dele pode ser desfeita.
+         */
+        var tarde = new TardeDeQuinta();
+        var escala = tarde.Escalar();
+        var noiteDeQuinta = Periodo.De(new DateOnly(2026, 11, 5), Turno.Noite);
+
+        var substituto = escala.Desistir(tarde.Edson.Id, Em(5, 11), [new Jornada(tarde.Benedito.Id, noiteDeQuinta)]);
+
+        Assert.Equal("João Batista", substituto?.Nome);
+        Assert.Equal(5310, escala.RodizioDepois.UltimoEscalado(Funcoes.Estivador, Inscricao.Cadastrado)?.Numero);
+        Assert.Equal([4130], escala.FilaDeEsperaDe(Funcoes.Estivador).Select(matricula => matricula.Numero));
+    }
+
+    [Fact]
+    public void A_jornada_que_deixa_o_descanso_em_dia_nao_pula_ninguem()
+    {
+        var tarde = new TardeDeQuinta();
+        var escala = tarde.Escalar();
+        var manhaDeSexta = Periodo.De(new DateOnly(2026, 11, 6), Turno.Manha);
+        var noiteDeQuinta = Periodo.De(new DateOnly(2026, 11, 5), Turno.Noite);
+
+        // Das 19h de quinta às 7h de sexta são 12 horas; a noite de quinta é do João, que não é o primeiro da fila.
+        var substituto = escala.Desistir(
+            tarde.Edson.Id,
+            Em(5, 11),
+            [new Jornada(tarde.Benedito.Id, manhaDeSexta), new Jornada(tarde.Joao.Id, noiteDeQuinta)]);
+
+        Assert.Equal("Benedito Lima", substituto?.Nome);
+    }
+
+    [Fact]
+    public void O_descanso_do_substituto_e_o_da_escala()
+    {
+        // Feita com 13 horas de descanso, a escala não dá a vaga a quem tem só 12 até a manhã de sexta.
+        var tarde = new TardeDeQuinta();
+        var treze = new Descanso(TimeSpan.FromHours(13));
+        var escala = Escalador.Escalar(tarde.Escalacao, [tarde.Requisicao], tarde.Trabalhadores, tarde.Jornadas, tarde.Rodizio, treze, Em(5, 10));
+        var manhaDeSexta = Periodo.De(new DateOnly(2026, 11, 6), Turno.Manha);
+
+        var substituto = escala.Desistir(tarde.Edson.Id, Em(5, 11), [new Jornada(tarde.Benedito.Id, manhaDeSexta)]);
+
+        Assert.Equal(treze, escala.Descanso);
+        Assert.Equal("João Batista", substituto?.Nome);
     }
 
     [Fact]
@@ -118,7 +170,7 @@ public sealed class DepoisDaEscalaTests
         var tarde = new TardeDeQuinta();
         var escala = tarde.Escalar();
 
-        var erro = Assert.Throws<ExcecaoDeDominio>(() => escala.Desistir(tarde.Edson.Id, Em(5, 13)));
+        var erro = Assert.Throws<ExcecaoDeDominio>(() => escala.Desistir(tarde.Edson.Id, Em(5, 13), []));
 
         Assert.Equal("O período de 05/11/2026, das 13h às 19h, já começou: quem não vai trabalhar fica com falta, e não desiste da vaga.", erro.Message);
         Assert.True(escala.SituacaoDe(Matricula.De(4101))!.Escalado);
@@ -132,10 +184,10 @@ public sealed class DepoisDaEscalaTests
 
         Assert.Equal(
             "Benedito Lima (matrícula 4130) não tem vaga na escala da estiva de 05/11/2026, das 13h às 19h.",
-            Assert.Throws<ExcecaoDeDominio>(() => escala.Desistir(tarde.Benedito.Id, Em(5, 11))).Message);
+            Assert.Throws<ExcecaoDeDominio>(() => escala.Desistir(tarde.Benedito.Id, Em(5, 11), [])).Message);
         Assert.Equal(
             "O trabalhador não se habilitou para a escala da estiva de 05/11/2026, das 13h às 19h.",
-            Assert.Throws<ExcecaoDeDominio>(() => escala.Desistir(TrabalhadorId.Novo(), Em(5, 11))).Message);
+            Assert.Throws<ExcecaoDeDominio>(() => escala.Desistir(TrabalhadorId.Novo(), Em(5, 11), [])).Message);
     }
 
     [Fact]
@@ -161,7 +213,7 @@ public sealed class DepoisDaEscalaTests
             Assert.Throws<ExcecaoDeDominio>(() => escala.ConfirmarPresenca(tarde.Edson.Id, Em(5, 13))).Message);
         Assert.Equal(
             "Edson Prado (matrícula 4101) já está com a presença confirmada: não dá mais para desistir.",
-            Assert.Throws<ExcecaoDeDominio>(() => escala.Desistir(tarde.Edson.Id, Em(5, 12, 30))).Message);
+            Assert.Throws<ExcecaoDeDominio>(() => escala.Desistir(tarde.Edson.Id, Em(5, 12, 30), [])).Message);
     }
 
     [Fact]

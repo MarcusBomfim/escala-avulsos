@@ -30,6 +30,7 @@ public static class Escalador
     /// <param name="trabalhadores">Os trabalhadores habilitados — todos eles; os outros são ignorados.</param>
     /// <param name="jornadas">Os períodos em que os habilitados já estão escalados, em outras escalas.</param>
     /// <param name="rodizio">Onde o rodízio da categoria parou na escala anterior.</param>
+    /// <param name="descanso">O descanso entre jornadas: fica com a escala, e vale também para quem entrar no lugar de quem desistir.</param>
     /// <param name="em">Quando a escala é feita: depois de a habilitação fechar, antes de o período começar.</param>
     public static Escala Escalar(
         Escalacao escalacao,
@@ -155,6 +156,7 @@ public static class Escalador
 
         return new Escala(
             escalacao,
+            descanso,
             em,
             [.. vagas.Select(vaga => vaga.Engajamento).OfType<Engajamento>()],
             NaoPreenchidas(vagas),

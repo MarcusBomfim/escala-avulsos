@@ -85,16 +85,20 @@ public sealed class RegrasDoDominioTests
     }
 
     [Fact]
-    public void O_dominio_nao_mostra_os_internos_a_ninguem()
+    public void O_dominio_so_mostra_os_internos_a_persistencia()
     {
         /*
          * O que é interno — a qualificação que só o trabalhador cria, o terno
-         * que só a requisição monta — fica interno: os testes usam o domínio
-         * pela porta da frente, como as outras camadas vão usar.
+         * que só a requisição monta — fica interno. A exceção é a persistência,
+         * que refaz os agregados gravados com a identidade que já tinham
+         * (ADR-0011). Os testes usam o domínio pela porta da frente, como a API
+         * vai usar; quem acrescentar outro nome a esta lista descobre aqui.
          */
-        var visiveisPara = Dominio.GetCustomAttributes<InternalsVisibleToAttribute>();
+        var visiveisPara = Dominio
+            .GetCustomAttributes<InternalsVisibleToAttribute>()
+            .Select(atributo => atributo.AssemblyName);
 
-        Assert.Empty(visiveisPara);
+        Assert.Equal(["EscalaAvulsos.Infraestrutura"], visiveisPara);
     }
 
     private static bool EhDaBibliotecaPadrao(string nome) =>

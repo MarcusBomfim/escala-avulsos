@@ -155,7 +155,7 @@ public sealed class ExtratoTests
             escala.Encerrar(periodo.Fim);
         }
 
-        public void Desistir(Periodo periodo) => Escalada(periodo, Funcoes.Estivador).Desistir(Antonio.Id, periodo.Inicio.AddHours(-1));
+        public void Desistir(Periodo periodo) => Escalada(periodo, Funcoes.Estivador).Desistir(Antonio.Id, periodo.Inicio.AddHours(-1), []);
 
         private Escala Escalada(Periodo periodo, Funcao funcao, Trabalhador? mais = null)
         {

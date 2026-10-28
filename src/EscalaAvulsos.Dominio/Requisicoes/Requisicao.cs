@@ -96,6 +96,14 @@ public sealed class Requisicao
         _ternos = [.. ternos.Select((vagas, indice) => new Terno(indice + 1, [.. vagas]))];
     }
 
+    private Requisicao(RequisicaoId id, DadosDaRequisicao dados, IReadOnlyList<IReadOnlyList<VagasDaFuncao>> ternos, DateTimeOffset feitaEm)
+        : this(dados, ternos, feitaEm)
+    {
+        ArgumentNullException.ThrowIfNull(id);
+
+        Id = id;
+    }
+
     public RequisicaoId Id { get; }
 
     public OperadorPortuario Operador { get; }
@@ -164,6 +172,29 @@ public sealed class Requisicao
     public override string ToString() =>
         $"{Operador.Nome} pede {Contar(_ternos.Count, "terno", "ternos")} {Categoria.ComDe}, {Contar(TotalDeVagas, "vaga", "vagas")}, "
         + $"para o navio {Navio}, no {Local}, em {Periodo}.";
+
+    /// <summary>
+    /// Refaz a requisição gravada como o operador a fez — e, se foi cancelada,
+    /// cancelando de novo, pelas mesmas regras: o pedido antes do período, os
+    /// ternos conferidos, o cancelamento com motivo e antes de o período
+    /// começar (ADR-0011).
+    /// </summary>
+    internal static Requisicao Reconstituir(
+        RequisicaoId id,
+        DadosDaRequisicao dados,
+        IReadOnlyList<IReadOnlyList<VagasDaFuncao>> ternos,
+        DateTimeOffset feitaEm,
+        (string Motivo, DateTimeOffset Em)? cancelamento)
+    {
+        var requisicao = new Requisicao(id, dados, ternos, feitaEm);
+
+        if (cancelamento is { } cancelada)
+        {
+            requisicao.Cancelar(cancelada.Motivo, cancelada.Em);
+        }
+
+        return requisicao;
+    }
 
     private static IEnumerable<string> ProblemasDoTerno(int numero, IReadOnlyList<VagasDaFuncao> vagas)
     {

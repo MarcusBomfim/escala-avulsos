@@ -23,6 +23,23 @@ public sealed class SituacaoNaEscala
         Motivos = motivos;
     }
 
+    /// <summary>A situação gravada, com a vaga que ela tem agora e a de que desistiu (ADR-0011).</summary>
+    internal SituacaoNaEscala(SituacaoGravada gravada, Engajamento? engajamento, Engajamento? vagaDesistida)
+    {
+        Trabalhador = gravada.Trabalhador;
+        Matricula = gravada.Matricula;
+        Nome = gravada.Nome;
+        Funcoes = gravada.Funcoes;
+        Motivos = gravada.Motivos;
+        Engajamento = engajamento;
+        Substituto = gravada.Substituto;
+        VagaDesistida = vagaDesistida;
+        DesistiuEm = gravada.Desistencia?.Em;
+        Comparecimento = gravada.Comparecimento;
+        PresenteDesde = gravada.PresenteDesde;
+        JustificativaDaFalta = gravada.JustificativaDaFalta;
+    }
+
     public TrabalhadorId Trabalhador { get; }
 
     public Matricula Matricula { get; }
@@ -87,6 +104,20 @@ public sealed class SituacaoNaEscala
             ? $"{quem} desistiu da vaga de {desistida.Funcao.NaFrase} em {FormatoBrasileiro.Instante(DesistiuEm!.Value)}."
             : $"{quem} ficou fora da escala: {string.Join("; ", Motivos.Select(motivo => motivo.Descricao))}.";
     }
+
+    /// <summary>A situação como se grava: sem a vaga de agora, que a escala guarda.</summary>
+    internal SituacaoGravada Gravada =>
+        new(
+            Trabalhador,
+            Matricula,
+            Nome,
+            Funcoes,
+            Motivos,
+            Substituto,
+            VagaDesistida is { } desistida ? new DesistenciaGravada(desistida.Gravada, DesistiuEm!.Value) : null,
+            Comparecimento,
+            PresenteDesde,
+            JustificativaDaFalta);
 
     internal void Desistir(DateTimeOffset em)
     {
