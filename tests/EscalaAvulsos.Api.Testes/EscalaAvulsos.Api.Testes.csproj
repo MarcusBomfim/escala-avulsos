@@ -1,0 +1,30 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <IsTestProject>true</IsTestProject>
+    <TestingPlatformDotnetTestSupport>true</TestingPlatformDotnetTestSupport>
+    <RootNamespace>EscalaAvulsos.Api.Testes</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" />
+    <PackageReference Include="Microsoft.IdentityModel.JsonWebTokens" />
+    <PackageReference Include="Testcontainers.PostgreSql" />
+    <PackageReference Include="xunit.v3.mtp-v2" />
+  </ItemGroup>
+  <ItemGroup>
+    <Using Include="Xunit" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\EscalaAvulsos.Api\EscalaAvulsos.Api.csproj" />
+  </ItemGroup>
+  <!--
+    O mesmo banco dos testes da infraestrutura — PostgreSQL num contêiner,
+    um banco por teste copiado de um modelo migrado —, e o CPF de teste tirado
+    da matrícula.
+  -->
+  <ItemGroup>
+    <Compile Include="..\EscalaAvulsos.Infraestrutura.Testes\Persistencia\BancoDeTestes.cs" Link="Banco\BancoDeTestes.cs" />
+    <Compile Include="..\EscalaAvulsos.Infraestrutura.Testes\Persistencia\Sessao.cs" Link="Banco\Sessao.cs" />
+    <Compile Include="..\EscalaAvulsos.Dominio.Testes\Trabalhadores\TrabalhadoresDeTeste.cs" Link="Exemplos\TrabalhadoresDeTeste.cs" />
+  </ItemGroup>
+</Project>

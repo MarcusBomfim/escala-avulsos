@@ -67,6 +67,24 @@ public sealed class AgregadoJaExiste : Exception
     }
 }
 
+/// <summary>A chave de idempotência já atendeu um pedido diferente deste (ADR-0015).</summary>
+public sealed class ChaveDeIdempotenciaReutilizada : Exception
+{
+    public ChaveDeIdempotenciaReutilizada()
+    {
+    }
+
+    public ChaveDeIdempotenciaReutilizada(string message)
+        : base(message)
+    {
+    }
+
+    public ChaveDeIdempotenciaReutilizada(string message, Exception innerException)
+        : base(message, innerException)
+    {
+    }
+}
+
 /// <summary>
 /// O documento gravado não se lê: JSON fora do formato, formato de outra
 /// versão, ou um estado que o domínio recusa.
