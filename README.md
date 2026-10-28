@@ -3,9 +3,9 @@
 [![CI](https://github.com/MarcusBomfim/escala-avulsos/actions/workflows/ci.yml/badge.svg)](https://github.com/MarcusBomfim/escala-avulsos/actions/workflows/ci.yml)
 [![Licença: MIT](https://img.shields.io/badge/licen%C3%A7a-MIT-blue.svg)](LICENSE)
 
-A escala do trabalhador portuário avulso, feita para o celular e para quem já não enxerga tão bem: o estivador abre o aplicativo e lê, numa frase, onde trabalha amanhã — ou por que ficou de fora, e até quando. Por trás da tela, o que a escala precisa saber: quem pode trabalhar em cada função, o pedido do operador portuário, o rodízio, o descanso entre jornadas — e, nas próximas partes, o extrato, os avisos e o aplicativo.
+A escala do trabalhador portuário avulso, feita para o celular e para quem já não enxerga tão bem: o estivador abre o aplicativo e lê, numa frase, onde trabalha amanhã — ou por que ficou de fora, e até quando. Por trás da tela, o que a escala precisa saber: quem pode trabalhar em cada função, o pedido do operador portuário, o rodízio, o descanso entre jornadas, a frequência e o extrato, guardados num PostgreSQL que não deixa ninguém em duas jornadas — e, nas próximas partes, a API, o aplicativo e os avisos.
 
-C# 14 · .NET 10 · xUnit v3 · GitHub Actions
+C# 14 · .NET 10 · EF Core 10 · PostgreSQL 17 · Testcontainers · xUnit v3 · GitHub Actions
 
 > Projeto independente, de estudo e portfólio. Não tem ligação com o OGMO/Santos nem com nenhum órgão gestor de mão de obra; os nomes de pessoas, empresas, navios e terminais dos exemplos são inventados.
 
@@ -126,10 +126,10 @@ escala.SituacaoDe(Matricula.De(5310));
 
 A próxima escala de estivador começa depois da matrícula 4101, a do Edson — e o Benedito, que desta vez não foi alcançado, é o segundo da vez.
 
-Às 11h, o Edson desiste. A vaga vai para o primeiro da espera de estivador — o Benedito —, e a vez do rodízio anda até ele:
+Às 11h, o Edson desiste. A vaga vai para o primeiro da espera de estivador — o Benedito —, e a vez do rodízio anda até ele. A desistência recebe as jornadas que quem espera pegou em outras escalas depois desta, porque quem ficaria sem o descanso é pulado; aqui, nenhuma:
 
 ```csharp
-escala.Desistir(edson.Id, quintaAs11h);
+escala.Desistir(edson.Id, quintaAs11h, jornadas: []);
 // Benedito Lima (matrícula 4130) está na escala, no lugar de quem desistiu: estivador no terno 1 do navio Atlântico Sul, …
 ```
 
@@ -165,6 +165,25 @@ FrequenciaDoMes.De(antonio, Mes.De(2026, 11), escalacoes, escalas, RegraDeFreque
 // Trabalhou 2 períodos; 0 faltas sem justificativa, de 2 aceitas.
 ```
 
+### No banco
+
+Gravada, a escala sai como a API vai fazê-la: lê do banco o que o domínio precisa, decide no domínio, e grava com as versões que leu. O caminho está em [`FluxoDaEscala`](tests/EscalaAvulsos.Infraestrutura.Testes/Persistencia/FluxoDaEscala.cs), e cada passo nos testes ao lado dele:
+
+```csharp
+var rodizio = await escalas.RodizioDa(Categoria.Estiva);
+var jornadas = await escalas.JornadasPerto(habilitados.Select(trabalhador => trabalhador.Id), quintaATarde, Descanso.DaLei);
+
+var escala = Escalador.Escalar(escalacao, requisicoes, habilitados, jornadas, rodizio.Agregado, Descanso.DaLei, quintaAs10h);
+await escalas.Adicionar(escala, rodizio.Versao);
+```
+
+Se outra escala da estiva passou no meio, o rodízio já andou, e a gravação é recusada para ser refeita a partir dele. E se a escala da noite foi feita com jornadas lidas antes de a da tarde ser gravada, o banco não deixa o Benedito pegar as duas:
+
+```text
+Benedito Lima (matrícula 4130) já tem jornada em 05/11/2026, das 13h às 19h, e as duas não cabem com o descanso
+de 11 horas entre elas. A escala não foi gravada: leia as jornadas de novo e refaça.
+```
+
 ## Roteiro
 
 O projeto é construído em partes, cada uma entregue funcionando, testada e documentada.
@@ -174,7 +193,7 @@ O projeto é construído em partes, cada uma entregue funcionando, testada e doc
 | 1 | Trabalhadores e requisições: matrícula, qualificações, exame médico e impedimentos, com o motivo de cada "não"; o pedido do operador com o navio, o local, o período e os ternos | ✅ |
 | 2 | A escala: a habilitação para o período, o rodízio pela ordem das matrículas, os registrados antes dos cadastrados, o descanso de onze horas e a explicação de cada escolha | ✅ |
 | 3 | Depois da escala: presença e falta, troca e desistência, a frequência mínima e o extrato do trabalhador, com o noturno e as provisões de férias, 13º e FGTS | ✅ |
-| 4 | Persistência com EF Core e PostgreSQL, testes com Testcontainers, e a escala que não põe ninguém em duas vagas ao mesmo tempo | |
+| 4 | Persistência com EF Core e PostgreSQL, testes com Testcontainers, e a escala que não põe ninguém em duas vagas ao mesmo tempo | ✅ |
 | 5 | API REST: entrada pela matrícula, papéis de trabalhador, escalador e operador, ProblemDetails, concorrência otimista e idempotência | |
 | 6 | O aplicativo do trabalhador, para o celular e para quem tem mais idade: "Minha escala" numa tela, letra grande, alto contraste, botões grandes, ouvir a escala, linguagem simples — com a acessibilidade conferida por teste | |
 | 7 | Avisos e tempo real: notificação quando sai a escala e antes de fechar a habilitação, a escala ao vivo e o painel do escalador e do operador | |
@@ -205,6 +224,17 @@ O projeto é construído em partes, cada uma entregue funcionando, testada e doc
 - **A frequência do mês.** As habilitações, os períodos trabalhados, as faltas e as desistências, contados nas escalações e nas escalas; o mínimo menor na proporção dos dias de férias, afastamento ou suspensão, arredondado a favor do trabalhador; e quanto falta, até quando: "faltam 3 até 30/11/2026". Cumprida, em andamento ou descumprida — e a medida disciplinar fica com o órgão gestor.
 - **O extrato do mês.** Cada período trabalhado, com o valor da função pela tabela da convenção, o adicional noturno e o prazo do pagamento, 48 horas depois do fim do serviço; no total, as provisões de férias com o terço e de 13º e o FGTS depositado. Falta e desistência não são pagas; a função sem valor na tabela é recusada, e não paga como zero.
 
+**Parte 4 — o banco**
+
+- **Cada agregado é um documento JSON**, de um formato com número, conferido por extenso num teste. A leitura é estrita: propriedade que falta ou que sobra, nulo onde não cabe — também dentro de uma lista — e enum pelo número fazem a leitura falhar.
+- **O que volta do banco passa pelas regras.** O trabalhador é refeito pelos passos de quem o cadastrou, a requisição é pedida e cancelada de novo, a escalação confere a janela e as funções de cada habilitação. A escala é juntada e conferida, com todos os problemas de uma vez. O documento editado à mão que fere uma regra é recusado na leitura, com o id e o motivo.
+- **A escala guarda o descanso com que foi feita**, e ele vale para o substituto: quem espera e pegou, em outra escala, uma jornada que não cabe é pulado, e continua na fila.
+- **O PostgreSQL guarda e confere.** Uma tabela por agregado, com o documento em `jsonb` e, ao lado, o que se procura sem abri-lo. O banco garante a matrícula e o CPF que não se repetem, uma escalação por categoria e período, uma escala por escalação, e as referências entre eles. As restrições têm nome, e cada recusa vira uma mensagem.
+- **Ninguém grava por cima do que não viu.** Cada linha tem uma versão, conferida no mesmo comando que grava; quem perde a corrida lê de novo e refaz. Na abertura da janela, vinte trabalhadores se habilitam no mesmo instante, e nenhuma habilitação se perde.
+- **Ninguém em duas jornadas que se cruzam, contado o descanso**, nem quando a decisão foi tomada com jornadas velhas: uma restrição de exclusão do PostgreSQL recusa a vaga, e nada da gravação fica.
+- **O rodízio sem corrida.** Cada categoria tem uma linha com a escala mais recente e uma versão; duas escalas feitas ao mesmo tempo do mesmo ponto não gravam as duas, e a desistência que anda a vez sobe a versão.
+- **As consultas da escala**: o trabalhador pela matrícula, os habilitados de uma escalação, as requisições do período, as jornadas perto de um período, o rodízio da categoria, e as escalações e escalas de um trabalhador no mês, de onde saem a frequência e o extrato.
+
 ## Decisões
 
 As decisões que mudam o desenho do sistema estão registradas em [`docs/adr`](docs/adr):
@@ -219,6 +249,9 @@ As decisões que mudam o desenho do sistema estão registradas em [`docs/adr`](d
 - [ADR-0008](docs/adr/0008-depois-da-escala.md) — depois da escala: a desistência dá a vaga ao primeiro da fila de espera; a presença, a falta e o encerramento.
 - [ADR-0009](docs/adr/0009-a-frequencia-do-mes.md) — a frequência do mês, contada nos fatos da escala, com o mínimo proporcional aos dias em que o trabalhador podia trabalhar.
 - [ADR-0010](docs/adr/0010-o-extrato-do-mes.md) — o extrato do mês: cada período trabalhado, o noturno, as provisões, o FGTS e o prazo de 48 horas; sem descontos e sem produção.
+- [ADR-0011](docs/adr/0011-os-agregados-gravados-voltam-pelas-regras.md) — cada agregado é um documento JSON de formato conferido, e o que volta do banco passa pelas regras; a escala guarda o descanso, que vale para o substituto.
+- [ADR-0012](docs/adr/0012-o-banco-e-a-concorrencia.md) — o PostgreSQL guarda os documentos e confere o que consegue sem repetir regra; concorrência otimista com a versão num comando só.
+- [ADR-0013](docs/adr/0013-ninguem-em-duas-jornadas.md) — as vagas numa tabela com restrição de exclusão, contado o descanso; o rodízio de cada categoria com versão.
 
 E algumas que não precisaram de ADR:
 
@@ -242,32 +275,49 @@ E algumas que não precisaram de ADR:
 - **A frequência em meses montados com escalas de verdade**: dias de férias, de suspensão, de afastamento sem fim e de inscrição cancelada, o mínimo proporcional arredondado para baixo, o mês aberto e o encerrado, e as faltas acima do limite.
 - **O extrato no centavo**: as provisões e o FGTS conferidos pela conta feita à parte, a noite que termina no mês seguinte e é do mês em que começa, e os prazos de pagamento.
 - **O exemplo deste README**, de ponta a ponta.
-- **Arquitetura.** O domínio só referencia a biblioteca padrão; toda classe pública é selada, estática ou abstrata; nenhuma propriedade tem `set` público; os valores não têm construtor público; os internos não são visíveis a ninguém; e todo agregado tem identidade própria.
+- **Os documentos**: gravar, ler e gravar de novo dá o mesmo JSON, para cada agregado, com tudo o que ele pode ter — e a escala lida continua de onde parou. O formato de cada um está escrito por extenso. E mais de sessenta documentos adulterados, um para cada regra que a leitura confere, são recusados com a mensagem certa.
+- **Um PostgreSQL de verdade**, num contêiner, com um banco para cada teste copiado de um modelo já migrado. O teste confere que toda mudança no modelo tem migração. Confere o que o banco recusa mesmo em SQL à mão, e que o papel da aplicação lê e grava, mas não muda o esquema.
+- **As corridas, cada gravação na sua conexão**: dez gravações a partir da mesma versão, e passa uma; vinte habilitações no mesmo instante, e ficam as vinte; duas escalas da categoria do mesmo rodízio, e grava uma; duas desistências que escolhem o mesmo substituto, e o banco dá a vaga a uma só.
+- **Arquitetura.** O domínio só referencia a biblioteca padrão; toda classe pública é selada, estática ou abstrata; nenhuma propriedade tem `set` público; os valores não têm construtor público; os internos só são visíveis à persistência; e todo agregado tem identidade própria.
 
 ## Como rodar
 
-Pré-requisito: o [SDK do .NET 10](https://dotnet.microsoft.com/download).
+Pré-requisitos: o [SDK do .NET 10](https://dotnet.microsoft.com/download) e o Docker, para os testes de banco, que sobem um PostgreSQL num contêiner. Sem Docker, esses testes são pulados, com o motivo; no CI, Docker indisponível é falha.
 
 ```bash
 dotnet test --solution EscalaAvulsos.slnx
 ```
 
+As migrações saem do modelo pelo `dotnet-ef`, fixado no manifesto de ferramentas:
+
+```bash
+dotnet tool restore
+```
+
+```bash
+dotnet ef migrations add NomeDaMudanca --project src/EscalaAvulsos.Infraestrutura --output-dir Persistencia/Migracoes
+```
+
 ## Estrutura
 
 ```text
-src/EscalaAvulsos.Dominio/               regras do negócio, sem dependências
-  Comum/                                 exceção de domínio, identidade, relógio do porto, mês, dinheiro e textos
-  Identificacao/                         matrícula, CPF, CNPJ e número IMO
-  Periodos/                              os quatro turnos e os períodos de seis horas
-  Trabalhadores/                         trabalhador, funções, qualificações, exame, impedimentos e aptidão
-  Requisicoes/                           requisição, ternos, operador portuário, navio e local
-  Escalacoes/                            escalação e habilitação, rodízio, descanso, o escalador, a escala e o que vem depois dela
-  Frequencias/                           a regra e a frequência do mês
-  Extratos/                              a tabela de remuneração e o extrato do mês
-tests/EscalaAvulsos.Dominio.Testes/      exemplos, propriedades e o exemplo deste README
-tests/EscalaAvulsos.Arquitetura.Testes/  regras que o domínio não pode quebrar
-docs/adr/                                decisões de arquitetura
-docs/analise-do-sistema-atual.md         o sistema de hoje, o que os usuários relatam e o que muda aqui
+src/EscalaAvulsos.Dominio/                  regras do negócio, sem dependências
+  Comum/                                    exceção de domínio, identidade, relógio do porto, mês, dinheiro e textos
+  Identificacao/                            matrícula, CPF, CNPJ e número IMO
+  Periodos/                                 os quatro turnos e os períodos de seis horas
+  Trabalhadores/                            trabalhador, funções, qualificações, exame, impedimentos e aptidão
+  Requisicoes/                              requisição, ternos, operador portuário, navio e local
+  Escalacoes/                               escalação e habilitação, rodízio, descanso, o escalador, a escala e o que vem depois dela
+  Frequencias/                              a regra e a frequência do mês
+  Extratos/                                 a tabela de remuneração e o extrato do mês
+src/EscalaAvulsos.Infraestrutura/           o que o domínio não sabe
+  Documentos/                               o formato JSON de cada agregado, e a leitura estrita
+  Persistencia/                             o contexto do banco, os repositórios, a concorrência e as migrações
+tests/EscalaAvulsos.Dominio.Testes/         exemplos, propriedades e o exemplo deste README
+tests/EscalaAvulsos.Infraestrutura.Testes/  os documentos, e o PostgreSQL de verdade num contêiner
+tests/EscalaAvulsos.Arquitetura.Testes/     regras que o domínio não pode quebrar
+docs/adr/                                   decisões de arquitetura
+docs/analise-do-sistema-atual.md            o sistema de hoje, o que os usuários relatam e o que muda aqui
 ```
 
 ## Licença
