@@ -88,6 +88,44 @@ antonio.AptidaoPara(estivador, Periodo.De(new DateOnly(2027, 1, 5), Turno.Noite)
 // o exame médico (ASO) vale só até 30/11/2026; está de férias de 04/01/2027 a 02/02/2027.
 ```
 
+Para a tarde de quinta, das 13h às 19h, a Cais Forte pediu um terno menor: um sinaleiro e dois estivadores. A habilitação abre à 1h e fecha às 10h, e não há corrida: quem se habilita às 9h59 tem a mesma vez de quem se habilitou à 1h, porque a vez é pela matrícula. Quem não pode trabalhar numa função fica sabendo na hora:
+
+```csharp
+var escalacao = new Escalacao(Categoria.Estiva, quintaATarde, CalendarioDaEscalacao.Padrao);
+
+escalacao.Habilitar(antonio, [sinaleiro, estivador], quintaAs6h);
+
+escalacao.Habilitar(dirceu, [sinaleiro], quintaAs6h);
+// Dirceu Alves (matrícula 4188) não pode se habilitar como sinaleiro: não tem a qualificação de sinaleiro.
+```
+
+Seis estivadores se habilitam; o Antônio e o Carlos também como sinaleiros, e o João é cadastrado. O rodízio de sinaleiro tinha parado no Carlos, o de estivador no Benedito, e o Dirceu trabalhou de manhã. Às 10h, a escala sai: a função com menos habilitados primeiro, os registrados antes dos cadastrados, cada um na sua vez — e quem não pode é pulado:
+
+```csharp
+var escala = Escalador.Escalar(escalacao, [requisicao], habilitados, [manhaDoDirceu], rodizio, Descanso.DaLei, quintaAs10h);
+
+escala.Engajamentos;
+// Antônio Ferreira (matrícula 4127): sinaleiro no terno 1 do navio Atlântico Sul (IMO 9876543), no Terminal Cais Leste, berço 4, …
+// Carlos Mota (matrícula 4152): estivador no terno 1 do navio Atlântico Sul (IMO 9876543), …
+// Edson Prado (matrícula 4101): estivador no terno 1 do navio Atlântico Sul (IMO 9876543), …
+```
+
+E quem ficou de fora sabe por quê, sem procurar o nome numa lista:
+
+```csharp
+escala.SituacaoDe(Matricula.De(4130));
+// Benedito Lima (matrícula 4130) ficou fora da escala: como estivador, o rodízio parou 2 posições antes da sua vez.
+
+escala.SituacaoDe(Matricula.De(4188));
+// Dirceu Alves (matrícula 4188) ficou fora da escala: tem jornada em 05/11/2026, das 7h às 13h, e o descanso de 11 horas
+// só termina em 06/11/2026, à meia-noite.
+
+escala.SituacaoDe(Matricula.De(5310));
+// João Batista (matrícula 5310) ficou fora da escala: como estivador, as vagas ficaram todas com registrados.
+```
+
+A próxima escala de estivador começa depois da matrícula 4101, a do Edson — e o Benedito, que desta vez não foi alcançado, é o segundo da vez.
+
 ## Roteiro
 
 O projeto é construído em partes, cada uma entregue funcionando, testada e documentada.
@@ -95,7 +133,7 @@ O projeto é construído em partes, cada uma entregue funcionando, testada e doc
 | Parte | Conteúdo | |
 |--:|---|---|
 | 1 | Trabalhadores e requisições: matrícula, qualificações, exame médico e impedimentos, com o motivo de cada "não"; o pedido do operador com o navio, o local, o período e os ternos | ✅ |
-| 2 | A escala: a habilitação para o período, o rodízio pela ordem das matrículas, os registrados antes dos cadastrados, o descanso de onze horas e a explicação de cada escolha | |
+| 2 | A escala: a habilitação para o período, o rodízio pela ordem das matrículas, os registrados antes dos cadastrados, o descanso de onze horas e a explicação de cada escolha | ✅ |
 | 3 | Depois da escala: presença e falta, troca e desistência, a frequência mínima e o extrato do trabalhador, com o noturno e as provisões de férias, 13º e FGTS | |
 | 4 | Persistência com EF Core e PostgreSQL, testes com Testcontainers, e a escala que não põe ninguém em duas vagas ao mesmo tempo | |
 | 5 | API REST: entrada pela matrícula, papéis de trabalhador, escalador e operador, ProblemDetails, concorrência otimista e idempotência | |
@@ -113,6 +151,14 @@ O projeto é construído em partes, cada uma entregue funcionando, testada e doc
 - **A aptidão, com todos os motivos.** Pode ou não pode trabalhar numa função, num período — e, se não pode, cada motivo com o tipo, a frase e os dias em que impede: sem a qualificação, qualificação vencida ou que ainda não começou, sem exame ou com exame vencido, férias, afastamento, suspensão, inscrição cancelada.
 - **A requisição do operador portuário.** O operador pelo CNPJ, o navio pelo número IMO, o terminal e o berço, o período, e os ternos com as vagas de cada função; uma categoria por requisição, os ternos numerados na ordem, as vagas somadas por função, e o cancelamento com motivo antes de o período começar.
 
+**Parte 2 — a escala**
+
+- **A escalação de cada período**, por categoria, com o calendário dela: as requisições chegam até 4 horas antes, e a habilitação vai de 12 a 3 horas antes do período — o padrão do sistema, configurável por porto. Os horários saem no relógio do porto: "abre em 05/11/2026, à 1h", "fechou em 05/11/2026, às 10h".
+- **A habilitação sem corrida.** O trabalhador escolhe as funções em que concorre, troca ou desiste enquanto a janela está aberta, e a hora em que se habilitou não dá preferência: os habilitados ficam na ordem das matrículas. Quem não pode trabalhar numa função é recusado na hora, com os motivos — o que vale para todas, como o exame vencido, dito uma vez só.
+- **O rodízio pela ordem das matrículas.** Uma roda por função, separada para registrados e cadastrados, que começa depois do último escalado e dá a volta. Quem a roda alcança e não pode trabalhar perde a vez; quem ela não alcança fica mais perto na próxima. A justiça é conferida: com os mesmos habilitados, ninguém fica mais de uma escala na frente de ninguém.
+- **O descanso de onze horas**, contado no relógio, antes e depois de cada jornada marcada, com a hora em que ele termina: "o descanso de 11 horas só termina em 06/11/2026, à meia-noite". O mínimo é configurável, para a convenção.
+- **A escala, e o porquê de cada um.** A função com menos habilitados primeiro; em cada uma, os registrados e depois os cadastrados, com as vagas que sobraram. As requisições canceladas não entram, e as que chegaram depois do prazo ficam de fora, listadas. Cada habilitado sai com a vaga — navio, terminal, berço, terno, função — ou com os motivos: o descanso, a aptidão, as posições que faltaram no rodízio, as vagas que ficaram com os registrados, a função que ninguém pediu. As vagas vazias saem listadas para o operador, e a mesma entrada dá sempre a mesma escala.
+
 ## Decisões
 
 As decisões que mudam o desenho do sistema estão registradas em [`docs/adr`](docs/adr):
@@ -121,6 +167,9 @@ As decisões que mudam o desenho do sistema estão registradas em [`docs/adr`](d
 - [ADR-0002](docs/adr/0002-os-periodos-de-seis-horas.md) — os períodos de seis horas, do dia em que começam, em instantes no horário de Brasília.
 - [ADR-0003](docs/adr/0003-a-aptidao-diz-os-motivos.md) — a aptidão diz todos os motivos, e os dias em que cada um impede, e não só sim ou não.
 - [ADR-0004](docs/adr/0004-a-requisicao-e-os-ternos.md) — a requisição é de uma categoria, com os ternos como o operador pede; o operador é o CNPJ, e o navio, o número IMO.
+- [ADR-0005](docs/adr/0005-a-escalacao-e-a-habilitacao.md) — uma escalação por categoria e período, com o calendário dela; a habilitação sem corrida, e a aptidão conferida na hora.
+- [ADR-0006](docs/adr/0006-o-rodizio-e-o-descanso.md) — o rodízio pela ordem das matrículas, uma roda por função e inscrição; quem não pode perde a vez; o descanso contado no relógio, para os dois lados.
+- [ADR-0007](docs/adr/0007-a-escala.md) — a escala é uma conta: a função com menos habilitados primeiro, registrados antes de cadastrados, e a situação de cada habilitado, com o porquê.
 
 E algumas que não precisaram de ADR:
 
@@ -135,6 +184,10 @@ E algumas que não precisaram de ADR:
 - **Propriedades em 400 casos sorteados**, com semente fixa: CPFs, CNPJs e números IMO com os verificadores calculados pelo próprio teste, por uma conta escrita à parte, são aceitos, voltam iguais da máscara, e com um verificador trocado são recusados.
 - **Seis meses de períodos, de outubro de 2018 a março de 2019**, um atrás do outro: cada um começa onde o anterior termina, e cada instante cai no período certo, também nas noites em que o horário de verão mudava.
 - **A aptidão no limite de cada data**: o último dia do exame e da qualificação, o primeiro e o último das férias, a véspera da volta do afastamento, a noite que é de um dia e termina no outro.
+- **A janela da habilitação no limite**: da abertura, incluída, ao último instante antes do fechamento; os horários "à 1h", "ao meio-dia", "à meia-noite", "às 12h30".
+- **A roda girando setenta vezes**, com os mesmos sete habilitados e três vagas: depois de cada escala, quem trabalhou mais tem no máximo uma a mais que quem trabalhou menos.
+- **O descanso em tabela**: para cada turno e cada distância entre a jornada e o período, com 0, 6, 11, 12 e 13 horas de mínimo, quais períodos ficam impedidos.
+- **Trezentas escalas sorteadas**, com semente fixa — habilitados, funções, inscrições, suspensões, jornadas, requisições no prazo, fora dele e canceladas, e o rodízio parado em qualquer lugar. Em todas, conferido de fora: ninguém em duas vagas; cada um numa função em que se habilitou e que podia exercer; os escalados de cada roda são os primeiros da vez, pulando só quem não podia; nenhum cadastrado pega vaga que um registrado podia pegar; nenhuma vaga fica vazia com alguém que podia pegá-la; a vez para no último escalado; e toda vaga pedida está preenchida ou listada.
 - **O exemplo deste README**, de ponta a ponta.
 - **Arquitetura.** O domínio só referencia a biblioteca padrão; toda classe pública é selada, estática ou abstrata; nenhuma propriedade tem `set` público; os valores não têm construtor público; os internos não são visíveis a ninguém; e todo agregado tem identidade própria.
 
@@ -155,6 +208,7 @@ src/EscalaAvulsos.Dominio/               regras do negócio, sem dependências
   Periodos/                              os quatro turnos e os períodos de seis horas
   Trabalhadores/                         trabalhador, funções, qualificações, exame, impedimentos e aptidão
   Requisicoes/                           requisição, ternos, operador portuário, navio e local
+  Escalacoes/                            escalação e habilitação, rodízio, descanso, o escalador e a escala
 tests/EscalaAvulsos.Dominio.Testes/      exemplos, propriedades e o exemplo deste README
 tests/EscalaAvulsos.Arquitetura.Testes/  regras que o domínio não pode quebrar
 docs/adr/                                decisões de arquitetura
