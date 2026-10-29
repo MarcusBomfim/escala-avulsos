@@ -1,0 +1,117 @@
+.pagina {
+  display: grid;
+  gap: 1.25rem;
+  align-content: start;
+  width: min(30rem, 100%);
+  min-height: 100vh;
+  margin: 0 auto;
+  padding: 1rem;
+}
+
+/* O cartão da entrada do sistema de hoje: branco, com a sombra, no meio da tela. */
+.cartao {
+  display: grid;
+  gap: 0.75rem;
+  padding: 1.5rem 1.25rem;
+  border: 1px solid var(--rotulo-borda);
+  border-radius: 12px;
+  background: var(--superficie);
+  box-shadow: 0 2px 14px rgb(0 0 0 / 16%);
+}
+
+.marca {
+  display: flex;
+  gap: 0.6rem;
+  align-items: center;
+  justify-content: center;
+  margin: 0;
+  font-weight: 700;
+}
+
+.simbolo {
+  display: grid;
+  place-items: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  border: 2px solid var(--marinho);
+  border-radius: 50%;
+  color: var(--marinho);
+}
+
+.simbolo :global(.icone) {
+  width: 1.5rem;
+  height: 1.5rem;
+}
+
+.cartao h1 {
+  margin: 0;
+  font-size: 1.6rem;
+  font-weight: 400;
+  text-align: center;
+}
+
+.chamada {
+  margin: 0 0 0.5rem;
+  color: var(--texto-suave);
+  text-align: center;
+}
+
+/* O rótulo pequeno em letra de forma em cima do campo, como "USUÁRIO" e "SENHA" lá. */
+.cartao label {
+  color: var(--texto-suave);
+  font-size: 0.85rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.cartao textarea {
+  width: 100%;
+  padding: 0.75rem;
+  border: 2px solid var(--borda-forte);
+  border-radius: 4px;
+  background: var(--superficie);
+  color: var(--texto);
+  font: 0.85rem/1.4 var(--fonte-mono);
+  resize: vertical;
+}
+
+.cartao textarea:focus-visible {
+  border-color: var(--destaque);
+}
+
+.cartao button {
+  justify-self: stretch;
+}
+
+.aviso {
+  margin: 0;
+  padding: 0.75rem 1rem;
+  border: 2px solid var(--atencao);
+  border-radius: var(--raio);
+  background: var(--atencao-fundo);
+  color: var(--texto);
+}
+
+.erro {
+  margin: 0;
+  color: var(--perigo);
+  font-weight: 700;
+}
+
+.ajuda {
+  margin: 0.5rem 0 0;
+  color: var(--texto-suave);
+  font-size: 0.85rem;
+}
+
+.ajuda code {
+  display: block;
+  margin-top: 0.4rem;
+  padding: 0.6rem 0.75rem;
+  border: 1px solid var(--rotulo-borda);
+  border-radius: 4px;
+  background: var(--superficie-2);
+  font-family: var(--fonte-mono);
+  overflow-wrap: anywhere;
+}

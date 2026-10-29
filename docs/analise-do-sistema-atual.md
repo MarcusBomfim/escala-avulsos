@@ -8,8 +8,24 @@ Este projeto não tem ligação com o OGMO/Santos. O nome do órgão aparece aqu
 
 - **O site institucional** ([www97.ogmo-santos.com.br](https://www97.ogmo-santos.com.br/)) foi visto por inteiro na página inicial: os menus, as notícias "Atenção TPA", os acessos "ACESSO TPA" e "OGMO ON" (as duas entradas com login), a Escala Digital, o PAD Digital, o PPP eletrônico e um PDF sobre limpeza de cache no Android e no iOS.
 - **A página da Escala Digital** pediu uma verificação anti-robô, e o site passou a recusar os acessos seguintes. A verificação não foi contornada: o que se diz da Escala Digital aqui vem das notícias sobre ela.
-- **A área logada** — a escala, a habilitação, o extrato — fica em [www50.ogmo-santos.com.br](https://www50.ogmo-santos.com.br/), que leva à entrada em `/erp/Login/`, com matrícula e senha. Em 28/10/2026 ela parou numa verificação de segurança ("confirme que é humano"), que não foi contornada, e por trás dela não foi acessada. O que se diz dela vem do relato de quem a usa.
+- **A área logada** — a escala, a habilitação, o extrato — fica em [www50.ogmo-santos.com.br](https://www50.ogmo-santos.com.br/), que leva à entrada em `/erp/Login/`, com matrícula e senha. Em 28/10/2026 ela parou numa verificação de segurança ("confirme que é humano"), que não foi contornada. Em 29/10/2026, um trabalhador passou pela verificação e entrou na própria conta, e deixou ver as telas: o que está em [A área logada, por dentro](#a-área-logada-por-dentro) é só a aparência delas, sem nenhum dado dele.
 - **O aplicativo "Ogmo Santos Digital"**, publicado pela Container Solution, não está mais na Google Play: a página dele responde "não encontrado".
+
+## A área logada, por dentro
+
+Vista em 29/10/2026, no computador e numa janela estreita, como a de um celular. Aqui está só o desenho das telas: nenhum nome, matrícula, escala ou valor de quem abriu a conta.
+
+- **A moldura.** Uma faixa azul no alto, com a marca à esquerda; à direita, o nome e a matrícula de quem entrou, um botão vermelho "Sair" e o relógio. Logo abaixo, o menu em abas cinza — Disciplina, Edital, Escala, Folha, TPA, Treinamento, Troca Senha, Recados e um "⋮" —, com a aba aberta em azul-escuro. Cada tela abre numa aba interna, numa barra cinza, e o pé tem uma linha azul-marinho.
+- **A letra.** Helvetica de 13px, quase toda em negrito e em azul-marinho; o menu, em Open Sans de 12px. As abas têm 37px de altura, e o "Sair", 27px — abaixo dos 48px que o dedo pede.
+- **A entrada.** Um cartão branco no meio da tela, com usuário e senha, a escolha entre "Usuário ERP" e "TPA" e o botão azul "Acessar".
+- **A primeira tela é a dos recados**: os avisos do trabalhador, como a consulta e o próximo exame marcados.
+- **O menu Escala tem dez telas**: Agulhados, Escala na Caixa de Mestria, Escolha Rodízio Especializado, Horários, POP do TPA, Requisições, Resultado Escala Especializada, Ticket Engajamento, Escala Digital e Últimos Engajamentos.
+- **A Escala Digital é um quadro de parede**: uma tabela por categoria, com cada posição de trabalho, a turma, as vagas pedidas, as escaladas e as em aberto, e a situação escrita com uma bolinha colorida ("Travada"). É a escala de todos, e não a de quem lê: a própria situação fica noutra tela.
+- **Os últimos engajamentos** são blocos com a data e o período em rótulos cinza-azulados e, embaixo, o operador, o navio, o berço, o porto, o terno, a função e a observação do quadro.
+- **O extrato começa num formulário de filtros** — o período, os domingos e feriados, os retroativos e uma lista dupla de operadores portuários. O resultado é uma grade larga, com uma coluna por verba, que pede rolagem para o lado.
+- **No celular, a página não se ajusta à tela.** Falta a configuração de tela do celular (a meta `viewport`): o celular desenha a página na largura de um computador e a encolhe para caber, e a letra de 13px fica com uns cinco ou seis pixels. Para ler, é preciso aumentar com os dedos e arrastar para os lados — o mesmo que quem usa relata. Numa janela estreita, o menu quebra em duas linhas, e o extrato continua pedindo rolagem.
+
+O aplicativo deste projeto guarda essa cara — a faixa, as abas, os rótulos, o "Sair" vermelho, o relógio — e muda o tamanho, o contraste e o caminho até a escala ([ADR-0017](adr/0017-o-aplicativo-do-trabalhador.md)).
 
 ## Como a escala funciona hoje
 

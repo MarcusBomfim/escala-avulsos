@@ -39,8 +39,8 @@ public sealed record PedidoDeHabilitacao(IReadOnlyList<string> Funcoes);
 
 /// <summary>
 /// A habilitação de quem pede, numa escalação: se ele está habilitado, em que
-/// funções, e quando a janela abre e fecha — o que o aplicativo mostra antes
-/// e depois de ele se habilitar.
+/// funções, quando a janela abre e fecha, e as funções que ele pode escolher
+/// — o que o aplicativo mostra antes e depois de ele se habilitar.
 /// </summary>
 public sealed record MinhaHabilitacaoResposta(
     PeriodoResposta Periodo,
@@ -49,13 +49,15 @@ public sealed record MinhaHabilitacaoResposta(
     bool JanelaAberta,
     bool Habilitado,
     IReadOnlyList<string> Funcoes,
-    DateTimeOffset? Em)
+    DateTimeOffset? Em,
+    IReadOnlyList<OpcaoDeFuncao> Opcoes)
 {
-    public static MinhaHabilitacaoResposta De(Escalacao escalacao, TrabalhadorId trabalhador, DateTimeOffset agora)
+    public static MinhaHabilitacaoResposta De(Escalacao escalacao, Trabalhador trabalhador, DateTimeOffset agora)
     {
         ArgumentNullException.ThrowIfNull(escalacao);
+        ArgumentNullException.ThrowIfNull(trabalhador);
 
-        var habilitacao = escalacao.HabilitacaoDe(trabalhador);
+        var habilitacao = escalacao.HabilitacaoDe(trabalhador.Id);
 
         return new(
             PeriodoResposta.De(escalacao.Periodo),
@@ -64,7 +66,24 @@ public sealed record MinhaHabilitacaoResposta(
             escalacao.HabilitacaoAbertaEm(agora),
             habilitacao is not null,
             [.. habilitacao?.Funcoes.Select(funcao => funcao.Nome) ?? []],
-            habilitacao?.Em);
+            habilitacao?.Em,
+            [.. trabalhador.Qualificacoes.Select(qualificacao => OpcaoDeFuncao.De(trabalhador.AptidaoPara(qualificacao.Funcao, escalacao.Periodo)))]);
+    }
+}
+
+/// <summary>
+/// Uma função em que o trabalhador é qualificado, e se ele pode exercê-la no
+/// período — e, se não pode, os motivos, sem sujeito, como o domínio os diz:
+/// "o exame médico (ASO) vale só até 30/11/2026" (ADR-0003). É o "não" com
+/// o motivo antes de ele tentar.
+/// </summary>
+public sealed record OpcaoDeFuncao(string Funcao, bool Pode, IReadOnlyList<string> Motivos)
+{
+    public static OpcaoDeFuncao De(Aptidao aptidao)
+    {
+        ArgumentNullException.ThrowIfNull(aptidao);
+
+        return new(aptidao.Funcao.Nome, aptidao.Apto, [.. aptidao.Motivos.Select(motivo => motivo.Descricao)]);
     }
 }
 

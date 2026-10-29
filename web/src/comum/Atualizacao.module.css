@@ -1,0 +1,13 @@
+.atualizacao {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1rem;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+}
+
+.atualizacao p {
+  margin: 0;
+  color: var(--texto-suave);
+}

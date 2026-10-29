@@ -1,0 +1,68 @@
+/*
+ * O cartão do período no desenho dos engajamentos do sistema de hoje: o dia
+ * e o horário na faixa cinza-azulada do alto, os rótulos no mesmo tom; na
+ * borda da esquerda, a cor da situação, que o selo de dentro diz por escrito.
+ */
+.cartao {
+  display: grid;
+  gap: 0.75rem;
+  justify-items: start;
+  padding: 0 1rem 1rem;
+  border: 1px solid var(--rotulo-borda);
+  border-left: 0.5rem solid var(--borda-forte);
+  border-radius: var(--raio);
+  background: var(--superficie);
+}
+
+.cartao > * {
+  margin: 0;
+}
+
+.cartao > :global(.acoes) {
+  justify-self: stretch;
+  margin-top: 0.25rem;
+}
+
+.sucesso {
+  border-left-color: var(--sucesso);
+}
+
+.atencao {
+  border-left-color: var(--atencao);
+}
+
+.perigo {
+  border-left-color: var(--perigo);
+}
+
+.neutro {
+  border-left-color: var(--borda-forte);
+}
+
+.quando {
+  display: grid;
+  gap: 0.15rem;
+  justify-self: stretch;
+  margin: 0 -1rem;
+  padding: 0.65rem 1rem;
+  border-bottom: 1px solid var(--rotulo-borda);
+  border-radius: 0 calc(var(--raio) - 1px) 0 0;
+  background: var(--rotulo-fundo);
+}
+
+.turno {
+  color: var(--texto-suave);
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+
+/* Na letra muito grande, menos margem: cada centímetro da tela vai para o texto. */
+:global(:root[data-letra='muito-grande']) .cartao {
+  padding: 0 0.75rem 0.85rem;
+  border-left-width: 0.35rem;
+}
+
+:global(:root[data-letra='muito-grande']) .quando {
+  margin: 0 -0.75rem;
+  padding: 0.5rem 0.75rem;
+}

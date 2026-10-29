@@ -1,0 +1,44 @@
+/* A situação escrita e, depois dela, a bolinha da cor, como o "Travada ●" do quadro de hoje. */
+.selo {
+  display: inline-flex;
+  gap: 0.5rem;
+  align-items: center;
+  padding: 0.25rem 0.65rem;
+  border-radius: 4px;
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+.selo::after {
+  flex: none;
+  width: 0.8em;
+  height: 0.8em;
+  border-radius: 50%;
+  background: currentColor;
+  content: '';
+}
+
+.sucesso {
+  background: var(--sucesso-fundo);
+  color: var(--sucesso);
+}
+
+.atencao {
+  background: var(--atencao-fundo);
+  color: var(--atencao);
+}
+
+.perigo {
+  background: var(--perigo-fundo);
+  color: var(--perigo);
+}
+
+.neutro {
+  background: var(--neutro-fundo);
+  color: var(--neutro);
+}
+
+/* No contraste alto, o fundo é preto: a borda volta a desenhar o selo. */
+:global(:root[data-contraste='alto']) .selo {
+  border: 2px solid currentColor;
+}

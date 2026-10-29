@@ -83,6 +83,28 @@ public sealed class RepositorioDeEscalacoesTests(BancoDeTestes bancos) : TestesC
         Assert.Equal([dia2.Id, dia30.Id], doMes.Select(escalacao => escalacao.Id));
     }
 
+    [Fact]
+    public async Task As_escalacoes_da_categoria_que_ainda_nao_comecaram_vem_na_ordem_dos_periodos()
+    {
+        await using var sessao = Banco.NovaSessao();
+        var tarde = DaEstiva();
+        var noite = new Escalacao(Categoria.Estiva, QuintaATarde.Seguinte, CalendarioDaEscalacao.Padrao);
+        var manha = new Escalacao(Categoria.Estiva, QuintaATarde.Anterior, CalendarioDaEscalacao.Padrao);
+        var daCapatazia = new Escalacao(Categoria.Capatazia, QuintaATarde, CalendarioDaEscalacao.Padrao);
+
+        foreach (var escalacao in (Escalacao[])[noite, tarde, manha, daCapatazia])
+        {
+            await sessao.Escalacoes.Adicionar(escalacao, Cancelamento);
+        }
+
+        // Às 13h em ponto, a tarde já começou: ficam a noite e as seguintes.
+        var asOnze = await sessao.Escalacoes.DaCategoriaQueComecamDepoisDe(Categoria.Estiva, Em(5, 11), Cancelamento);
+        var asTreze = await sessao.Escalacoes.DaCategoriaQueComecamDepoisDe(Categoria.Estiva, Em(5, 13), Cancelamento);
+
+        Assert.Equal([tarde.Id, noite.Id], asOnze.Select(escalacao => escalacao.Id));
+        Assert.Equal([noite.Id], asTreze.Select(escalacao => escalacao.Id));
+    }
+
     private static Escalacao Habilitada(Periodo periodo, params Trabalhador[] trabalhadores)
     {
         var escalacao = new Escalacao(Categoria.Estiva, periodo, CalendarioDaEscalacao.Padrao);

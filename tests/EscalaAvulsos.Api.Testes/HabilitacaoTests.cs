@@ -24,6 +24,7 @@ public sealed class HabilitacaoTests(BancoDeTestes bancos) : TestesDaApi(bancos)
 
         Assert.Equal((Em(5, 1), Em(5, 10), false, false), (minha.AbreEm, minha.FechaEm, minha.JanelaAberta, minha.Habilitado));
         Assert.Empty(minha.Funcoes);
+        Assert.Equal([("Estivador", true)], minha.Opcoes.Select(opcao => (opcao.Funcao, opcao.Pode)));
     }
 
     [Fact]
@@ -41,6 +42,28 @@ public sealed class HabilitacaoTests(BancoDeTestes bancos) : TestesDaApi(bancos)
         Assert.Equal(["Sinaleiro", "Estivador"], habilitado.Funcoes);
         Assert.Equal(["Estivador"], trocado.Funcoes);
         Assert.False(desistiu.Habilitado);
+    }
+
+    [Fact]
+    public async Task A_lista_traz_as_escalacoes_da_categoria_dele_que_nao_comecaram_com_as_funcoes_que_ele_pode_escolher()
+    {
+        // A tarde de quinta, e a manhã de 1º de dezembro, quando o exame do Antônio já venceu; a capatazia não é a categoria dele.
+        await Preparar(4127, "Sinaleiro");
+        var escalador = Escalador();
+        await escalador.Enviar(HttpMethod.Put, "/api/escalacoes/Estiva/2026-12-01/Manha").ComSucesso();
+        await escalador.Enviar(HttpMethod.Put, "/api/escalacoes/Capatazia/2026-11-05/Noite").ComSucesso();
+        Relogio.Acertar(Em(5, 6));
+
+        var lista = await Trabalhador(4127).Ler("/api/eu/habilitacoes").LerComSucesso<IReadOnlyList<MinhaHabilitacaoResposta>>();
+        Relogio.Acertar(Em(5, 13));
+        var depoisDaTarde = await Trabalhador(4127).Ler("/api/eu/habilitacoes").LerComSucesso<IReadOnlyList<MinhaHabilitacaoResposta>>();
+
+        Assert.Equal([new DateOnly(2026, 11, 5), new DateOnly(2026, 12, 1)], lista.Select(escalacao => escalacao.Periodo.Dia));
+        var (tarde, dezembro) = (lista[0], lista[1]);
+        Assert.Equal((true, false), (tarde.JanelaAberta, dezembro.JanelaAberta));
+        Assert.Equal([("Estivador", true), ("Sinaleiro", true)], tarde.Opcoes.Select(opcao => (opcao.Funcao, opcao.Pode)));
+        Assert.All(dezembro.Opcoes, opcao => Assert.Equal((false, "o exame médico (ASO) vale só até 30/11/2026"), (opcao.Pode, Assert.Single(opcao.Motivos))));
+        Assert.Equal([new DateOnly(2026, 12, 1)], depoisDaTarde.Select(escalacao => escalacao.Periodo.Dia));
     }
 
     [Fact]

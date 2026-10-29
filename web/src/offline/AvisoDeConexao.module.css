@@ -1,0 +1,19 @@
+.aviso {
+  display: flex;
+  gap: 0.75rem;
+  align-items: flex-start;
+  margin: 0 0 1rem;
+  padding: 0.75rem 1rem;
+  border: 2px solid var(--atencao);
+  border-radius: var(--raio);
+  background: var(--atencao-fundo);
+  color: var(--texto);
+}
+
+.aviso p {
+  margin: 0;
+}
+
+.aviso :global(.icone) {
+  color: var(--atencao);
+}

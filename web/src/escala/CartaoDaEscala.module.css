@@ -1,0 +1,50 @@
+/* Os campos dois a dois quando cabem, como nos engajamentos do sistema de hoje; no celular, um embaixo do outro. */
+.detalhes {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(13rem, 100%), 1fr));
+  gap: 0.5rem;
+  justify-self: stretch;
+  margin: 0;
+}
+
+/* O rótulo em cima, na faixa cinza-azulada e em letra de forma; o valor embaixo, grande. */
+.detalhes div {
+  overflow: hidden;
+  border: 1px solid var(--rotulo-borda);
+  border-radius: 4px;
+}
+
+.detalhes dt {
+  padding: 0.25rem 0.6rem;
+  border-bottom: 1px solid var(--rotulo-borda);
+  background: var(--rotulo-fundo);
+  color: var(--texto-suave);
+  font-size: 0.85rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.detalhes dd {
+  margin: 0;
+  padding: 0.4rem 0.6rem;
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+
+.porque {
+  font-weight: 700;
+}
+
+.motivos {
+  margin: 0;
+  padding-left: 1.25rem;
+}
+
+.motivos li + li {
+  margin-top: 0.35rem;
+}
+
+.encerrada {
+  color: var(--texto-suave);
+}

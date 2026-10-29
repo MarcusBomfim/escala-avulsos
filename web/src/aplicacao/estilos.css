@@ -1,0 +1,323 @@
+/*
+ * As cores e medidas do aplicativo, num lugar só. Cada componente tem o seu
+ * arquivo .module.css e usa estas variáveis; o tema escuro e o contraste
+ * alto trocam só elas.
+ *
+ * Feito para quem tem mais idade, no celular (ADR-0017):
+ * - a letra parte de 18px, e aumenta pelo botão da letra — ou pelo tamanho
+ *   de letra do próprio celular, porque tudo é medido em rem;
+ * - o texto tem contraste de pelo menos 7:1 com o fundo (WCAG AAA);
+ * - todo botão tem pelo menos 48px de altura, com espaço entre eles;
+ * - situação tem cor, mas nunca só cor: o selo diz por escrito.
+ *
+ * O desenho é o do sistema que o trabalhador já conhece (ADR-0017): a faixa
+ * azul no alto, as abas cinza com a aberta em azul-escuro, o título em
+ * azul-marinho com a linha grossa embaixo, os rótulos no cinza-azulado e o
+ * "Sair" vermelho. As cores são as de lá, ajustadas só onde o contraste não
+ * chegava a 7:1 — a faixa um tom mais clara, o vermelho um tom mais escuro.
+ */
+:root {
+  color-scheme: light dark;
+
+  --fundo: #ffffff;
+  --superficie: #ffffff;
+  --superficie-2: #f5f5f5;
+  --linha-par: #f9fafc;
+  --texto: #0b0b61;
+  --texto-suave: #3c4858;
+  --borda: #c6d0dc;
+  --borda-forte: #5d6875;
+  --rotulo-fundo: #e0e6ed;
+  --rotulo-borda: #c6d0dc;
+  --marinho: #0b0b61;
+  --destaque: #1a4fbf;
+  --destaque-texto: #ffffff;
+  --destaque-fundo: #e6eefb;
+  --foco: #1a4fbf;
+
+  --faixa: #76b2d9;
+  --faixa-escura: #3a80ba;
+  --faixa-texto: #0b0b61;
+  --aba: #eeeeee;
+  --aba-borda: #a8a8a8;
+  --aba-texto: #0b0b61;
+  --aba-ativa: #3f4c8c;
+  --aba-ativa-texto: #ffffff;
+  --barra: #f0f0f0;
+  --barra-borda: #e0e6ed;
+  --sair: #a51d1d;
+  --sair-texto: #ffffff;
+  --sair-borda: #730606;
+
+  --sucesso: #0b5a2f;
+  --sucesso-fundo: #ddf2e5;
+  --atencao: #6b3f00;
+  --atencao-fundo: #fcefd0;
+  --perigo: #8f1610;
+  --perigo-fundo: #fde5e2;
+  --perigo-texto: #ffffff;
+  --neutro: #3a4450;
+  --neutro-fundo: #e6eaee;
+
+  --raio: 6px;
+  --fonte: Helvetica, Arial, 'Liberation Sans', system-ui, sans-serif;
+  --fonte-mono: ui-monospace, 'Cascadia Code', 'SF Mono', Consolas, monospace;
+
+  font-size: 112.5%;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --fundo: #0d1117;
+    --superficie: #161c24;
+    --superficie-2: #1c2430;
+    --linha-par: #1a212b;
+    --texto: #f0f3f6;
+    --texto-suave: #c3ccd6;
+    --borda: #3a4552;
+    --borda-forte: #8a96a3;
+    --rotulo-fundo: #232d3b;
+    --rotulo-borda: #3a4552;
+    --marinho: #8cc4ff;
+    --destaque: #8cc4ff;
+    --destaque-texto: #0d1117;
+    --destaque-fundo: #13273f;
+    --foco: #8cc4ff;
+
+    --faixa: #1b3a5c;
+    --faixa-escura: #10263f;
+    --faixa-texto: #eef3fb;
+    --aba: #26303c;
+    --aba-borda: #5b6878;
+    --aba-texto: #eef3fb;
+    --aba-ativa: #8cc4ff;
+    --aba-ativa-texto: #0d1117;
+    --barra: #1c2430;
+    --barra-borda: #3a4552;
+    --sair: #ffa198;
+    --sair-texto: #0d1117;
+    --sair-borda: #ffa198;
+
+    --sucesso: #7fe0a8;
+    --sucesso-fundo: #10291b;
+    --atencao: #ffd27a;
+    --atencao-fundo: #33260a;
+    --perigo: #ffa198;
+    --perigo-fundo: #3a1512;
+    --perigo-texto: #0d1117;
+    --neutro: #c3ccd6;
+    --neutro-fundo: #232b35;
+  }
+}
+
+/* Branco no preto, com o amarelo para o que se toca: o contraste mais alto que a tela dá. */
+:root[data-contraste='alto'] {
+  color-scheme: dark;
+
+  --fundo: #000000;
+  --superficie: #000000;
+  --superficie-2: #000000;
+  --linha-par: #000000;
+  --texto: #ffffff;
+  --texto-suave: #ffffff;
+  --borda: #ffffff;
+  --borda-forte: #ffffff;
+  --rotulo-fundo: #000000;
+  --rotulo-borda: #ffffff;
+  --marinho: #ffffff;
+  --destaque: #ffe600;
+  --destaque-texto: #000000;
+  --destaque-fundo: #000000;
+  --foco: #00e5ff;
+
+  --faixa: #000000;
+  --faixa-escura: #000000;
+  --faixa-texto: #ffffff;
+  --aba: #000000;
+  --aba-borda: #ffffff;
+  --aba-texto: #ffffff;
+  --aba-ativa: #ffe600;
+  --aba-ativa-texto: #000000;
+  --barra: #000000;
+  --barra-borda: #ffffff;
+  --sair: #000000;
+  --sair-texto: #ffe600;
+  --sair-borda: #ffe600;
+
+  --sucesso: #7dff9d;
+  --sucesso-fundo: #000000;
+  --atencao: #ffe600;
+  --atencao-fundo: #000000;
+  --perigo: #ff9b9b;
+  --perigo-fundo: #000000;
+  --perigo-texto: #000000;
+  --neutro: #ffffff;
+  --neutro-fundo: #000000;
+}
+
+:root[data-letra='grande'] {
+  font-size: 137.5%;
+}
+
+:root[data-letra='muito-grande'] {
+  font-size: 162.5%;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--fundo);
+  color: var(--texto);
+  font: 1rem/1.55 var(--fonte);
+  /* Na letra muito grande, numa tela estreita, até o CPF quebra — em vez de a tela rolar para o lado. */
+  overflow-wrap: anywhere;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+h1,
+h2,
+h3 {
+  color: var(--texto);
+  font-weight: 700;
+  line-height: 1.25;
+}
+
+h1 {
+  margin: 0 0 0.5rem;
+  font-size: 1.6rem;
+}
+
+h2 {
+  margin: 0;
+  font-size: 1.25rem;
+}
+
+p {
+  margin: 0 0 0.75rem;
+}
+
+a {
+  color: var(--destaque);
+  text-underline-offset: 0.2em;
+}
+
+:focus-visible {
+  outline: 3px solid var(--foco);
+  outline-offset: 3px;
+}
+
+/* O botão, e o link que faz papel de botão: grande, com a palavra, e o ícone ao lado dela. */
+button,
+.botao {
+  display: inline-flex;
+  gap: 0.5rem;
+  align-items: center;
+  justify-content: center;
+  min-height: 3rem;
+  padding: 0.65rem 1.25rem;
+  border: 2px solid var(--destaque);
+  border-radius: var(--raio);
+  background: var(--destaque);
+  color: var(--destaque-texto);
+  font: inherit;
+  font-weight: 700;
+  line-height: 1.3;
+  text-align: center;
+  text-decoration: none;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+button.secundario,
+.botao.secundario {
+  border-color: var(--borda-forte);
+  background: var(--superficie);
+  color: var(--texto);
+}
+
+button.perigo {
+  border-color: var(--perigo);
+  background: var(--perigo);
+  color: var(--perigo-texto);
+}
+
+button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+input[type='checkbox'] {
+  width: 1.5rem;
+  height: 1.5rem;
+  margin: 0;
+  accent-color: var(--destaque);
+}
+
+.icone {
+  flex: none;
+  width: 1.35em;
+  height: 1.35em;
+}
+
+/* Botões lado a lado quando cabem; um embaixo do outro, cada um da largura da tela, quando não. */
+.acoes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+.acoes > * {
+  flex: 1 1 12rem;
+}
+
+/* A pergunta antes do que não tem volta, no lugar do botão que a abriu, da largura toda. */
+.confirmacao {
+  display: grid;
+  flex-basis: 100%;
+  gap: 0.5rem;
+  padding: 1rem;
+  border: 2px solid var(--perigo);
+  border-radius: var(--raio);
+  background: var(--perigo-fundo);
+}
+
+.confirmacao p {
+  margin: 0;
+}
+
+.confirmacao .acoes {
+  margin-top: 0.25rem;
+}
+
+.subtitulo {
+  margin: 0 0 1.25rem;
+  color: var(--texto-suave);
+}
+
+.carregando {
+  color: var(--texto-suave);
+  font-weight: 600;
+}
+
+.vazio {
+  padding: 1.25rem;
+  border: 2px dashed var(--borda-forte);
+  border-radius: var(--raio);
+  background: var(--superficie);
+}
+
+.somente-leitor {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}

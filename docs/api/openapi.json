@@ -407,6 +407,28 @@
         }
       }
     },
+    "/api/eu/habilitacoes": {
+      "get": {
+        "tags": [
+          "Eu"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/MinhaHabilitacaoResposta"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/eu/habilitacoes/{dia}/{turno}": {
       "get": {
         "tags": [
@@ -1712,7 +1734,8 @@
           "janelaAberta",
           "habilitado",
           "funcoes",
-          "em"
+          "em",
+          "opcoes"
         ],
         "type": "object",
         "properties": {
@@ -1745,6 +1768,12 @@
               "string"
             ],
             "format": "date-time"
+          },
+          "opcoes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OpcaoDeFuncao"
+            }
           }
         },
         "additionalProperties": false
@@ -1957,6 +1986,29 @@
           },
           "inscricao": {
             "$ref": "#/components/schemas/Inscricao"
+          }
+        },
+        "additionalProperties": false
+      },
+      "OpcaoDeFuncao": {
+        "required": [
+          "funcao",
+          "pode",
+          "motivos"
+        ],
+        "type": "object",
+        "properties": {
+          "funcao": {
+            "type": "string"
+          },
+          "pode": {
+            "type": "boolean"
+          },
+          "motivos": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
           }
         },
         "additionalProperties": false

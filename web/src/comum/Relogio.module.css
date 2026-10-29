@@ -1,0 +1,13 @@
+.relogio {
+  display: inline-flex;
+  gap: 0.4rem;
+  align-items: center;
+  margin: 0;
+  color: var(--texto);
+  font-size: 0.95rem;
+  white-space: nowrap;
+}
+
+.relogio strong {
+  font-variant-numeric: tabular-nums;
+}

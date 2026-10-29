@@ -1,0 +1,174 @@
+.moldura {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: auto 1fr auto;
+  width: min(40rem, 100%);
+  min-height: 100vh;
+  margin: 0 auto;
+}
+
+.pular {
+  position: absolute;
+  top: -10rem;
+  left: 1rem;
+  z-index: 1;
+  padding: 0.75rem 1rem;
+  border-radius: var(--raio);
+  background: var(--destaque);
+  color: var(--destaque-texto);
+  font-weight: 700;
+}
+
+.pular:focus {
+  top: 1rem;
+}
+
+/* A faixa azul do alto: a marca, quem entrou e o "Sair" vermelho no canto, como no sistema de hoje. */
+.faixa {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 0.75rem;
+  align-items: center;
+  padding: 0.6rem 1rem;
+  padding-top: max(0.6rem, env(safe-area-inset-top));
+  background: var(--faixa);
+  color: var(--faixa-texto);
+}
+
+.marca {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  border: 2px solid var(--faixa-texto);
+  border-radius: 50%;
+  color: var(--faixa-texto);
+}
+
+.marca :global(.icone) {
+  width: 1.5rem;
+  height: 1.5rem;
+}
+
+.quem {
+  display: grid;
+  flex: 1 1 8rem;
+  margin: 0;
+  line-height: 1.25;
+}
+
+.quem strong {
+  font-size: 1.1rem;
+}
+
+.quem span {
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.sair {
+  min-height: 3rem;
+  padding: 0.4rem 0.9rem;
+  border: 1px solid var(--sair-borda);
+  border-radius: 5px;
+  background: var(--sair);
+  color: var(--sair-texto);
+}
+
+/* As abas, cinza sobre o azul, e a aberta em azul-escuro; com a letra maior, duas a duas, para nenhuma palavra ser cortada. */
+.abas {
+  padding: 0.5rem;
+  background: linear-gradient(var(--faixa), var(--faixa-escura));
+}
+
+.menu {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.35rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+:global(:root[data-letra='grande']) .menu,
+:global(:root[data-letra='muito-grande']) .menu {
+  grid-template-columns: repeat(2, 1fr);
+}
+
+.menu a {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  min-height: 3.5rem;
+  padding: 0.4rem 0.2rem;
+  border: 1px solid var(--aba-borda);
+  border-radius: 4px;
+  background: var(--aba);
+  color: var(--aba-texto);
+  font-size: 0.85rem;
+  font-weight: 700;
+  line-height: 1.2;
+  text-align: center;
+  text-decoration: none;
+}
+
+.menu a :global(.icone) {
+  width: 1.6rem;
+  height: 1.6rem;
+}
+
+.menu a[aria-current='page'] {
+  border-color: var(--aba-ativa);
+  background: var(--aba-ativa);
+  color: var(--aba-ativa-texto);
+}
+
+/* A barra cinza embaixo das abas, como a das telas abertas no sistema de hoje: o relógio do porto e a letra. */
+.barra {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1rem;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.5rem 1rem;
+  border-bottom: 1px solid var(--barra-borda);
+  background: var(--barra);
+}
+
+.conteudo {
+  padding: 1.25rem 1rem 2rem;
+}
+
+.conteudo:focus {
+  outline: none;
+}
+
+/* O título de cada tela em azul-marinho, com a linha grossa embaixo, como no sistema de hoje. */
+.conteudo h1 {
+  padding-bottom: 0.4rem;
+  border-bottom: 3px solid var(--marinho);
+}
+
+.pe {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem 1rem;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem;
+  padding-bottom: max(1rem, env(safe-area-inset-bottom));
+  border-top: 3px solid var(--marinho);
+}
+
+.nome {
+  margin: 0;
+  font-weight: 700;
+}
+
+:global(:root[data-letra='muito-grande']) .conteudo {
+  padding-inline: 0.75rem;
+}

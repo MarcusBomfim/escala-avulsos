@@ -39,6 +39,25 @@ public sealed class RepositorioDeEscalacoes(ContextoDoBanco contexto, TimeProvid
         return escalacoes.SingleOrDefault();
     }
 
+    /// <summary>
+    /// As escalações abertas da categoria cujo período começa depois do
+    /// instante, na ordem dos períodos — as que o trabalhador ainda pode
+    /// olhar no celular: a habilitação aberta, a que vai abrir, e a que já
+    /// fechou e espera a escala.
+    /// </summary>
+    public async Task<IReadOnlyList<Escalacao>> DaCategoriaQueComecamDepoisDe(Categoria categoria, DateTimeOffset instante, CancellationToken cancelamento = default)
+    {
+        var depois = instante.ToUniversalTime();
+        var escalacoes = await _tabela.Consultar(
+            registros => registros
+                .Where(registro => registro.Categoria == categoria && registro.Inicio > depois)
+                .OrderBy(registro => registro.Inicio),
+            registro => registro.ParaEscalacao(),
+            cancelamento);
+
+        return [.. escalacoes.Select(escalacao => escalacao.Agregado)];
+    }
+
     /// <summary>As escalações do mês em que o trabalhador se habilitou, na ordem dos períodos — para a frequência (ADR-0009).</summary>
     public async Task<IReadOnlyList<Escalacao>> DoTrabalhadorNoMes(TrabalhadorId trabalhador, Mes mes, CancellationToken cancelamento = default)
     {

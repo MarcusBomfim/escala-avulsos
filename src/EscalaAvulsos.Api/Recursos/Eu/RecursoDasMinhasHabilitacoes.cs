@@ -9,8 +9,9 @@ namespace EscalaAvulsos.Api.Recursos.Eu;
 
 /// <summary>
 /// O trabalhador se habilitando para a escala de um período, na categoria
-/// dele: ver a janela, escolher as funções, trocar, desistir — sem versão, e
-/// sem "tente de novo" (ADR-0015).
+/// dele: achar as escalações abertas, ver a janela e as funções que pode
+/// escolher, habilitar-se, trocar, desistir — sem versão, e sem "tente de
+/// novo" (ADR-0015, ADR-0017).
 /// </summary>
 public sealed class RecursoDasMinhasHabilitacoes : IRecursoDaApi
 {
@@ -19,11 +20,32 @@ public sealed class RecursoDasMinhasHabilitacoes : IRecursoDaApi
 
     public void Mapear(IEndpointRouteBuilder api)
     {
-        var minha = api.MapGroup("/eu/habilitacoes/{dia}/{turno}").WithTags("Eu").RequireAuthorization(Politicas.Trabalhador);
+        var minhas = api.MapGroup("/eu/habilitacoes").WithTags("Eu").RequireAuthorization(Politicas.Trabalhador);
+        minhas.MapGet("/", Listar);
 
+        var minha = minhas.MapGroup("/{dia}/{turno}");
         minha.MapGet("/", Obter);
         minha.MapPut("/", Habilitar).DispensandoAVersaoLida(SoDeQuemPede);
         minha.MapDelete("/", Desistir).DispensandoAVersaoLida(SoDeQuemPede);
+    }
+
+    /// <summary>
+    /// As escalações abertas da categoria dele cujo período ainda não
+    /// começou, na ordem dos períodos: a tela "habilitar" sem que ele precise
+    /// saber o dia e o turno de cor.
+    /// </summary>
+    private static async Task<Ok<IReadOnlyList<MinhaHabilitacaoResposta>>> Listar(
+        RepositorioDeTrabalhadores trabalhadores,
+        RepositorioDeEscalacoes escalacoes,
+        TimeProvider relogio,
+        HttpContext http,
+        CancellationToken cancelamento)
+    {
+        var trabalhador = await Quem(trabalhadores, http, cancelamento);
+        var agora = relogio.GetUtcNow();
+        var abertas = await escalacoes.DaCategoriaQueComecamDepoisDe(trabalhador.Categoria, agora, cancelamento);
+
+        return TypedResults.Ok<IReadOnlyList<MinhaHabilitacaoResposta>>([.. abertas.Select(escalacao => MinhaHabilitacaoResposta.De(escalacao, trabalhador, agora))]);
     }
 
     private static async Task<Ok<MinhaHabilitacaoResposta>> Obter(
@@ -38,7 +60,7 @@ public sealed class RecursoDasMinhasHabilitacoes : IRecursoDaApi
         var trabalhador = await Quem(trabalhadores, http, cancelamento);
         var lida = await LeituraDaEscalacao.Ler(escalacoes, trabalhador.Categoria, TextosDoPedido.ComoPeriodo(dia, turno), cancelamento);
 
-        return TypedResults.Ok(MinhaHabilitacaoResposta.De(lida.Agregado, trabalhador.Id, relogio.GetUtcNow()));
+        return TypedResults.Ok(MinhaHabilitacaoResposta.De(lida.Agregado, trabalhador, relogio.GetUtcNow()));
     }
 
     private static async Task<Ok<MinhaHabilitacaoResposta>> Habilitar(
@@ -64,7 +86,7 @@ public sealed class RecursoDasMinhasHabilitacoes : IRecursoDaApi
             return lida.Agregado;
         });
 
-        return TypedResults.Ok(MinhaHabilitacaoResposta.De(escalacao, trabalhador.Id, relogio.GetUtcNow()));
+        return TypedResults.Ok(MinhaHabilitacaoResposta.De(escalacao, trabalhador, relogio.GetUtcNow()));
     }
 
     private static async Task<Ok<MinhaHabilitacaoResposta>> Desistir(
@@ -88,7 +110,7 @@ public sealed class RecursoDasMinhasHabilitacoes : IRecursoDaApi
             return lida.Agregado;
         });
 
-        return TypedResults.Ok(MinhaHabilitacaoResposta.De(escalacao, trabalhador.Id, relogio.GetUtcNow()));
+        return TypedResults.Ok(MinhaHabilitacaoResposta.De(escalacao, trabalhador, relogio.GetUtcNow()));
     }
 
     private static async Task<Trabalhador> Quem(RepositorioDeTrabalhadores trabalhadores, HttpContext http, CancellationToken cancelamento) =>

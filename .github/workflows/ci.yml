@@ -49,3 +49,41 @@ jobs:
 
       - name: Executar testes
         run: dotnet test --solution EscalaAvulsos.slnx --configuration Release --no-build
+
+  aplicativo:
+    name: Aplicativo do trabalhador
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: web
+
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      - name: Restaurar dependências
+        run: npm ci
+
+      # Os tipos do aplicativo saem do contrato da API, docs/api/openapi.json
+      # (ADR-0017). Contrato mudou e os tipos não foram regerados: falha
+      # aqui, e não numa tela quebrada no celular do trabalhador.
+      - name: Conferir os tipos gerados do contrato
+        run: npm run tipos && git diff --exit-code -- src/api/esquema.d.ts
+
+      - name: Validar formatação
+        run: npm run formatacao
+
+      - name: Analisar o código
+        run: npm run lint
+
+      # Com o axe em cada tela: o que as WCAG pedem e o jsdom consegue ver.
+      - name: Executar testes
+        run: npm run teste
+
+      - name: Compilar
+        run: npm run build
