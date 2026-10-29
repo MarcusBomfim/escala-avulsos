@@ -1,0 +1,115 @@
+.meses {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-bottom: 1.25rem;
+}
+
+.meses > * {
+  flex: 1 1 10rem;
+}
+
+/* Cada parte como um bloco do sistema de hoje: o título na faixa cinza-azulada do alto. */
+.parte {
+  display: grid;
+  gap: 0.75rem;
+  justify-items: start;
+  margin-bottom: 1.5rem;
+  padding: 0 1.25rem 1.25rem;
+  border: 1px solid var(--rotulo-borda);
+  border-radius: var(--raio);
+  background: var(--superficie);
+}
+
+.parte > * {
+  margin: 0;
+}
+
+.parte > h2:first-child {
+  justify-self: stretch;
+  margin: 0 -1.25rem;
+  padding: 0.6rem 1.25rem;
+  border-bottom: 1px solid var(--rotulo-borda);
+  border-radius: calc(var(--raio) - 1px) calc(var(--raio) - 1px) 0 0;
+  background: var(--rotulo-fundo);
+}
+
+.numeros,
+.totais {
+  display: grid;
+  gap: 0.5rem;
+  justify-self: stretch;
+}
+
+/* As linhas dos números alternando o fundo, como as das grades do sistema de hoje. */
+.numeros,
+.totais {
+  gap: 0;
+}
+
+.numeros div,
+.totais div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 1rem;
+  justify-content: space-between;
+  padding: 0.45rem 0.5rem;
+  border-bottom: 1px solid var(--borda);
+}
+
+.numeros div:nth-child(even),
+.totais div:nth-child(even) {
+  background: var(--linha-par);
+}
+
+.numeros dt,
+.totais dt {
+  color: var(--texto-suave);
+}
+
+.numeros dd,
+.totais dd {
+  margin: 0;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.linhas {
+  display: grid;
+  gap: 0.75rem;
+  justify-self: stretch;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.linha {
+  display: grid;
+  gap: 0.25rem;
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--rotulo-borda);
+  border-radius: 4px;
+}
+
+.linha:nth-child(even) {
+  background: var(--linha-par);
+}
+
+.linha p {
+  margin: 0;
+}
+
+.dia {
+  display: grid;
+}
+
+.dia span,
+.prazo {
+  color: var(--texto-suave);
+}
+
+.valor {
+  font-size: 1.25rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
