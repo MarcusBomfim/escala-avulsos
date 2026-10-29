@@ -18,5 +18,6 @@
   </ItemGroup>
   <ItemGroup>
     <InternalsVisibleTo Include="EscalaAvulsos.Api.Testes" />
+    <InternalsVisibleTo Include="EscalaAvulsos.Api.Ensaio" />
   </ItemGroup>
 </Project>

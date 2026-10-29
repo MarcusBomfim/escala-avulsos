@@ -1,11 +1,12 @@
 # Escala dos Avulsos
 
 [![CI](https://github.com/MarcusBomfim/escala-avulsos/actions/workflows/ci.yml/badge.svg)](https://github.com/MarcusBomfim/escala-avulsos/actions/workflows/ci.yml)
+[![Ponta a ponta](https://github.com/MarcusBomfim/escala-avulsos/actions/workflows/e2e.yml/badge.svg)](https://github.com/MarcusBomfim/escala-avulsos/actions/workflows/e2e.yml)
 [![Licença: MIT](https://img.shields.io/badge/licen%C3%A7a-MIT-blue.svg)](LICENSE)
 
-A escala do trabalhador portuário avulso, feita para o celular e para quem já não enxerga tão bem: o estivador abre o aplicativo e lê, numa frase, onde trabalha amanhã — ou por que ficou de fora, e até quando. Por trás da tela, o que a escala precisa saber: quem pode trabalhar em cada função, o pedido do operador portuário, o rodízio, o descanso entre jornadas, a frequência e o extrato, guardados num PostgreSQL que não deixa ninguém em duas jornadas, e uma API em que cada um entra com o seu papel — e, nas próximas partes, o aplicativo e os avisos.
+A escala do trabalhador portuário avulso, feita para o celular e para quem já não enxerga tão bem: o estivador abre o aplicativo e lê, numa frase, onde trabalha amanhã — ou por que ficou de fora, e até quando. Por trás da tela, o que a escala precisa saber: quem pode trabalhar em cada função, o pedido do operador portuário, o rodízio, o descanso entre jornadas, a frequência e o extrato, guardados num PostgreSQL que não deixa ninguém em duas jornadas, uma API em que cada um entra com o seu papel, e o aplicativo do trabalhador, com letra que cresce num toque, contraste alto, a escala lida em voz alta, e que abre sem sinal no cais — e, na próxima parte, os avisos.
 
-C# 14 · .NET 10 · ASP.NET Core · EF Core 10 · PostgreSQL 17 · OpenAPI · Testcontainers · xUnit v3 · GitHub Actions
+C# 14 · .NET 10 · ASP.NET Core · EF Core 10 · PostgreSQL 17 · OpenAPI · React 19 · TypeScript · PWA · TanStack Query · Vitest · Playwright · axe · Testcontainers · xUnit v3 · GitHub Actions
 
 > Projeto independente, de estudo e portfólio. Não tem ligação com o OGMO/Santos nem com nenhum órgão gestor de mão de obra; os nomes de pessoas, empresas, navios e terminais dos exemplos são inventados.
 
@@ -236,6 +237,23 @@ Cada um faz a sua parte do seu lado, com o token do seu papel. A tarde de quinta
 
 O Carlos, que ficou de fora, lê o motivo, e que é o primeiro da espera de estivador e de sinaleiro. Se o Edson desistir, `POST /api/eu/escalas/{id}/desistencia`, a vaga é do Carlos.
 
+### No celular
+
+A mesma tarde, no aplicativo de cada um. As imagens saem do teste de ponta a ponta, [`tarde-de-quinta.spec.ts`](e2e/testes/tarde-de-quinta.spec.ts), que faz tudo isto no Chrome, numa tela de celular, e confere a acessibilidade de cada tela.
+
+| Às 8h, o Antônio se habilita | Às 10h05, a escala dele | O Carlos, de fora |
+|---|---|---|
+| ![As escalações abertas, com as funções do Antônio já marcadas e a habilitação fechando às 10h](docs/imagens/habilitar.png) | ![O cartão da tarde de quinta: você vai trabalhar, sinaleiro no terno 1, navio Atlântico Sul, Terminal Cais Leste, berço 4](docs/imagens/minha-escala.png) | ![O cartão do Carlos: você ficou de fora, com os motivos e o primeiro lugar na espera de sinaleiro e de estivador](docs/imagens/ficou-de-fora.png) |
+
+- **A escala primeiro**, numa tela: o dia e o horário por extenso, a situação num selo com a palavra, e tudo o que é preciso para chegar ao trabalho. O botão "Ouvir" lê o cartão em voz alta: "Hoje, quinta-feira, 5 de novembro, da uma da tarde às sete da noite. Você vai trabalhar como sinaleiro, no terno 1 do navio Atlântico Sul. Local: Terminal Cais Leste, berço 4."
+- **Habilitar-se é um toque**: o aplicativo mostra as escalações abertas, com as funções que ele pode escolher já marcadas, e as que não pode com o motivo — antes de ele tentar.
+- **Desistir pergunta antes**, por inteiro: "Desistir da vaga de estivador de hoje, quinta-feira, 5 de novembro, das 13h às 19h?" Às 11h o Edson desiste, e no celular do Carlos a vaga já é dele.
+- **Sem sinal no cais**, o aplicativo abre, avisa que está sem internet, e mostra a escala que ficou guardada.
+
+| Letra muito grande e contraste alto | No dia seguinte, o mês | Os dados, com o aviso do exame |
+|---|---|---|
+| ![A mesma escala com a letra muito grande e o contraste alto, branco no preto, numa tela de 320px](docs/imagens/contraste-alto.png) | ![A frequência do mês e o extrato: a tarde de quinta, R$ 260,00, pago até amanhã às 19h](docs/imagens/meu-mes.png) | ![O cadastro do Antônio, com o exame médico que vence em 24 dias](docs/imagens/meus-dados.png) |
+
 ## Roteiro
 
 O projeto é construído em partes, cada uma entregue funcionando, testada e documentada.
@@ -247,7 +265,7 @@ O projeto é construído em partes, cada uma entregue funcionando, testada e doc
 | 3 | Depois da escala: presença e falta, troca e desistência, a frequência mínima e o extrato do trabalhador, com o noturno e as provisões de férias, 13º e FGTS | ✅ |
 | 4 | Persistência com EF Core e PostgreSQL, testes com Testcontainers, e a escala que não põe ninguém em duas vagas ao mesmo tempo | ✅ |
 | 5 | API REST: entrada pela matrícula, papéis de trabalhador, escalador e operador, ProblemDetails, concorrência otimista e idempotência | ✅ |
-| 6 | O aplicativo do trabalhador, para o celular e para quem tem mais idade: "Minha escala" numa tela, letra grande, alto contraste, botões grandes, ouvir a escala, linguagem simples — com a acessibilidade conferida por teste | |
+| 6 | O aplicativo do trabalhador, para o celular e para quem tem mais idade: "Minha escala" numa tela, letra grande, alto contraste, botões grandes, ouvir a escala, linguagem simples — com a acessibilidade conferida por teste | ✅ |
 | 7 | Avisos e tempo real: notificação quando sai a escala e antes de fechar a habilitação, a escala ao vivo e o painel do escalador e do operador | |
 | 8 | Observabilidade, Docker e entrega contínua | |
 
@@ -299,6 +317,21 @@ O projeto é construído em partes, cada uma entregue funcionando, testada e doc
 - **Todo erro em ProblemDetails**, de um [catálogo](docs/api/problemas.md), com a frase do domínio no detalhe. A entrada é estrita, como a leitura do banco.
 - **O contrato no repositório**, em [`docs/api/openapi.json`](docs/api/openapi.json), conferido por teste.
 
+**Parte 6 — o aplicativo do trabalhador**
+
+- **Um aplicativo web que se instala no celular** (PWA), sem loja: a escala da semana, a habilitação, o mês e os dados, com os tipos gerados do contrato da API.
+- **Com a cara do sistema que o trabalhador já conhece**: a faixa azul no alto, as abas com a aberta em azul-escuro, o título em azul-marinho com a linha grossa embaixo, os rótulos no cinza-azulado dos engajamentos, o "Sair" vermelho no canto e o relógio — agora na hora do porto. Só que cabendo no celular, sem zoom: no sistema de hoje, a página não se ajusta à tela, e o celular encolhe tudo.
+- **Feito para quem tem mais idade**:
+  - a letra parte de 18px e cresce com um toque, em três tamanhos;
+  - o contraste do texto é de pelo menos 7:1 no tema claro, no escuro e no contraste alto;
+  - todo botão tem pelo menos 48px e uma palavra;
+  - nenhuma sigla aparece sem explicação;
+  - a situação tem cor, mas nunca só cor.
+- **Ouvir a escala**, pela voz do próprio celular, com o horário dito por extenso.
+- **Em segunda pessoa, e no relógio do porto**: "Hoje", "Você vai trabalhar", "Você é o 1º da espera de sinaleiro" — na hora de Santos, mesmo com o celular em outro fuso.
+- **O "não" antes de tentar**: a API passa a dizer as escalações abertas da categoria do trabalhador e, para cada uma, as funções que ele pode escolher, com o motivo das que não pode. O que vai vencer — o exame, a reciclagem — é avisado trinta dias antes.
+- **Sem sinal no cais**, o aplicativo abre pela casca guardada no service worker, e a última escala lida fica no aparelho, com a hora em que foi lida. Sair apaga o que ficou guardado.
+
 ## Decisões
 
 As decisões que mudam o desenho do sistema estão registradas em [`docs/adr`](docs/adr):
@@ -319,6 +352,8 @@ As decisões que mudam o desenho do sistema estão registradas em [`docs/adr`](d
 - [ADR-0014](docs/adr/0014-o-contrato-http.md) — o contrato HTTP: entrada pela matrícula, três papéis, a versão na ETag, o erro em ProblemDetails, e cada gravação declarando o que exige.
 - [ADR-0015](docs/adr/0015-a-criacao-repetida-e-a-gravacao-que-o-servidor-refaz.md) — a chave de idempotência na criação sem identidade natural; e a habilitação, que o servidor relê e refaz.
 - [ADR-0016](docs/adr/0016-a-escala-pela-api.md) — a escala pela API: o órgão gestor com versão; o trabalhador numa semana, sem versão; e o contrato escrito no repositório.
+- [ADR-0017](docs/adr/0017-o-aplicativo-do-trabalhador.md) — o aplicativo do trabalhador: um PWA para o celular e para quem tem mais idade, em segunda pessoa, que abre sem sinal no cais.
+- [ADR-0018](docs/adr/0018-o-ensaio-de-ponta-a-ponta.md) — o ensaio de ponta a ponta: a mesma API com o relógio do teste, e o Chrome numa tela de celular, com a acessibilidade conferida.
 
 E algumas que não precisaram de ADR:
 
@@ -352,6 +387,17 @@ E algumas que não precisaram de ADR:
   - a requisição repetida dez vezes ao mesmo tempo, que cria uma só;
   - vinte habilitações e duas desistências ao mesmo tempo, sem nenhum "tente de novo".
 - **Os endpoints conferidos um a um**: todos têm política; todo endpoint que grava declara uma coisa só, entre a versão lida, a chave e o motivo de dispensar as duas; o documento OpenAPI descreve os cabeçalhos; e o contrato publicado é o que a API serve.
+- **O aplicativo, tela por tela**, com a API de mentira do MSW e o axe em cada uma — as WCAG 2.2 até o nível AA:
+  - a escala de quem trabalha, de quem ficou de fora, do substituto, de quem desistiu e de quem já trabalhou;
+  - o que se ouve, a desistência que pergunta antes, e a recusa do domínio com a frase dele;
+  - a habilitação com as funções marcadas, a que ele não pode exercer com o motivo, e a troca e a desistência sem versão;
+  - as datas no relógio do porto, com os testes rodando de propósito no fuso de Manaus;
+  - a letra, o contraste, a entrada, a saída que apaga o que ficou guardado, e a escala guardada no aparelho.
+- **De ponta a ponta, no Chrome, numa tela de celular**, contra a API do ensaio, com o relógio acertado para a tarde de quinta:
+  - o Antônio se habilita, a escala sai, ele lê e ouve; o Carlos lê por que ficou de fora; o Edson desiste e a vaga é do Carlos; e, no dia seguinte, o extrato;
+  - o aplicativo abre sem sinal, com a escala guardada;
+  - o axe em cada tela, com o contraste de 7:1 no tema claro, no escuro e no contraste alto;
+  - numa largura de 320px com a letra muito grande, nenhuma tela rola para o lado e nenhuma palavra de botão, do menu ou de título é cortada ao meio; e todo botão tem 48px.
 - **Arquitetura.** O domínio só referencia a biblioteca padrão; toda classe pública é selada, estática ou abstrata; nenhuma propriedade tem `set` público; os valores não têm construtor público; os internos só são visíveis à persistência; e todo agregado tem identidade própria.
 
 ## Como rodar
@@ -391,7 +437,7 @@ dotnet run --project src/EscalaAvulsos.Api
 E um token de desenvolvimento, do papel que quiser. Por exemplo, do trabalhador da matrícula 4127:
 
 ```bash
-dotnet user-jwts create --project src/EscalaAvulsos.Api --role trabalhador --claim matricula=4127
+dotnet user-jwts create --project src/EscalaAvulsos.Api --role trabalhador --claim matricula=4127 --name "Antônio Ferreira"
 ```
 
 A configuração do porto fica em `appsettings.json`, na seção `Porto`: os horários da escalação, o descanso entre jornadas, a frequência mínima e a tabela de remuneração. Quando a API muda de propósito, o contrato publicado é regravado pelo próprio teste:
@@ -399,6 +445,42 @@ A configuração do porto fica em `appsettings.json`, na seção `Porto`: os hor
 ```bash
 ESCALA_ATUALIZAR_CONTRATO=1 dotnet test --solution EscalaAvulsos.slnx
 ```
+
+O aplicativo do trabalhador pede o [Node 24](https://nodejs.org). Em desenvolvimento, ele abre em `http://localhost:5400` e repassa `/api` para a API, em `http://localhost:5300`; na tela de entrada, cola-se o token gerado acima:
+
+```bash
+npm ci --prefix web
+```
+
+```bash
+npm --prefix web run dev
+```
+
+Os testes do aplicativo, com o axe em cada tela, e os tipos, regerados do contrato quando a API muda:
+
+```bash
+npm --prefix web run teste
+```
+
+```bash
+npm --prefix web run tipos
+```
+
+Os testes de ponta a ponta usam o Google Chrome instalado na máquina e um PostgreSQL na porta 55435, que a API do ensaio apaga e migra a cada execução. Eles compilam a API do ensaio e o aplicativo, sobem os dois e abrem o celular:
+
+```bash
+docker run -d --name escala-avulsos-e2e -e POSTGRES_PASSWORD=postgres -p 55435:5432 postgres:17.6-alpine
+```
+
+```bash
+npm ci --prefix e2e
+```
+
+```bash
+npm --prefix e2e run teste
+```
+
+Com `IMAGENS=1`, os mesmos testes fotografam as telas deste README, em `docs/imagens`.
 
 ## Estrutura
 
@@ -420,6 +502,16 @@ src/EscalaAvulsos.Dominio/                  regras do negócio, sem dependência
 src/EscalaAvulsos.Infraestrutura/           o que o domínio não sabe
   Documentos/                               o formato JSON de cada agregado, e a leitura estrita
   Persistencia/                             o contexto do banco, os repositórios, a concorrência e as migrações
+web/                                        o aplicativo do trabalhador, em React e TypeScript
+  src/escala/                               minha escala: os cartões da semana, ouvir e desistir
+  src/habilitacao/                          as escalações abertas, e as funções que ele pode escolher
+  src/mes/                                  a frequência e o extrato
+  src/cadastro/                             os dados, com o aviso do que vai vencer
+  src/leitura/                              a letra e o contraste
+  src/offline/                              a escala guardada no aparelho e o aviso de sem internet
+  public/sw.js                              o service worker, que guarda a casca para abrir sem sinal
+e2e/                                        a tarde de quinta no Chrome, numa tela de celular, com o axe
+tests/EscalaAvulsos.Api.Ensaio/             a API do ensaio: a mesma API, com o relógio que o teste acerta
 tests/EscalaAvulsos.Api.Testes/             a API inteira, em memória, com um banco por teste
 tests/EscalaAvulsos.Dominio.Testes/         exemplos, propriedades e o exemplo deste README
 tests/EscalaAvulsos.Infraestrutura.Testes/  os documentos, e o PostgreSQL de verdade num contêiner
@@ -427,6 +519,7 @@ tests/EscalaAvulsos.Arquitetura.Testes/     regras que o domínio não pode queb
 docs/adr/                                   decisões de arquitetura
 docs/analise-do-sistema-atual.md            o sistema de hoje, o que os usuários relatam e o que muda aqui
 docs/api/                                   o catálogo dos problemas e o contrato OpenAPI publicado
+docs/imagens/                               as telas do aplicativo, fotografadas pelos testes de ponta a ponta
 ```
 
 ## Licença

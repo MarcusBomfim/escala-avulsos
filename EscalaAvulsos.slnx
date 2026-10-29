@@ -5,6 +5,7 @@
     <Project Path="src/EscalaAvulsos.Infraestrutura/EscalaAvulsos.Infraestrutura.csproj" />
   </Folder>
   <Folder Name="/tests/">
+    <Project Path="tests/EscalaAvulsos.Api.Ensaio/EscalaAvulsos.Api.Ensaio.csproj" />
     <Project Path="tests/EscalaAvulsos.Api.Testes/EscalaAvulsos.Api.Testes.csproj" />
     <Project Path="tests/EscalaAvulsos.Arquitetura.Testes/EscalaAvulsos.Arquitetura.Testes.csproj" />
     <Project Path="tests/EscalaAvulsos.Dominio.Testes/EscalaAvulsos.Dominio.Testes.csproj" />

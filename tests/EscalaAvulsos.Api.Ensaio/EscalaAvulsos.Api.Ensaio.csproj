@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+  <!--
+    A API do ensaio, para os testes de ponta a ponta: a mesma API, com o
+    relógio que o teste acerta e um banco que nasce vazio a cada subida
+    (ADR-0018). Não vai para produção: mora em tests/, e não tem imagem.
+  -->
+  <PropertyGroup>
+    <RootNamespace>EscalaAvulsos.Api.Ensaio</RootNamespace>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\EscalaAvulsos.Api\EscalaAvulsos.Api.csproj" />
+  </ItemGroup>
+</Project>
