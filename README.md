@@ -2,11 +2,12 @@
 
 [![CI](https://github.com/MarcusBomfim/escala-avulsos/actions/workflows/ci.yml/badge.svg)](https://github.com/MarcusBomfim/escala-avulsos/actions/workflows/ci.yml)
 [![Ponta a ponta](https://github.com/MarcusBomfim/escala-avulsos/actions/workflows/e2e.yml/badge.svg)](https://github.com/MarcusBomfim/escala-avulsos/actions/workflows/e2e.yml)
+[![Entrega](https://github.com/MarcusBomfim/escala-avulsos/actions/workflows/entrega.yml/badge.svg)](https://github.com/MarcusBomfim/escala-avulsos/actions/workflows/entrega.yml)
 [![Licença: MIT](https://img.shields.io/badge/licen%C3%A7a-MIT-blue.svg)](LICENSE)
 
-A escala do trabalhador portuário avulso, feita para o celular e para quem já não enxerga tão bem: o estivador abre o aplicativo e lê, numa frase, onde trabalha amanhã — ou por que ficou de fora, e até quando. Por trás da tela, o que a escala precisa saber: quem pode trabalhar em cada função, o pedido do operador portuário, o rodízio, o descanso entre jornadas, a frequência e o extrato, guardados num PostgreSQL que não deixa ninguém em duas jornadas, uma API em que cada um entra com o seu papel, e o aplicativo do trabalhador, com letra que cresce num toque, contraste alto, a escala lida em voz alta, e que abre sem sinal no cais. A escala que sai aparece sozinha na tela aberta e chega ao celular como notificação, e o órgão gestor e o operador acompanham o quadro de cada período ao vivo.
+A escala do trabalhador portuário avulso, feita para o celular e para quem já não enxerga tão bem: o estivador abre o aplicativo e lê, numa frase, onde trabalha amanhã — ou por que ficou de fora, e até quando. Por trás da tela, o que a escala precisa saber: quem pode trabalhar em cada função, o pedido do operador portuário, o rodízio, o descanso entre jornadas, a frequência e o extrato, guardados num PostgreSQL que não deixa ninguém em duas jornadas, uma API em que cada um entra com o seu papel, e o aplicativo do trabalhador, com letra que cresce num toque, contraste alto, a escala lida em voz alta, e que abre sem sinal no cais. A escala que sai aparece sozinha na tela aberta e chega ao celular como notificação, e o órgão gestor e o operador acompanham o quadro de cada período ao vivo. Tudo em contêineres, observado pelo OpenTelemetry, e com as imagens testadas no Chrome antes de serem publicadas.
 
-C# 14 · .NET 10 · ASP.NET Core · EF Core 10 · PostgreSQL 17 · OpenAPI · React 19 · TypeScript · PWA · TanStack Query · Vitest · Playwright · axe · Testcontainers · xUnit v3 · GitHub Actions
+C# 14 · .NET 10 · ASP.NET Core · EF Core 10 · PostgreSQL 17 · OpenAPI · React 19 · TypeScript · PWA · TanStack Query · Vitest · Playwright · axe · Testcontainers · xUnit v3 · OpenTelemetry · Docker · nginx · GitHub Actions
 
 > Projeto independente, de estudo e portfólio. Não tem ligação com o OGMO/Santos nem com nenhum órgão gestor de mão de obra; os nomes de pessoas, empresas, navios e terminais dos exemplos são inventados.
 
@@ -274,7 +275,7 @@ O projeto é construído em partes, cada uma entregue funcionando, testada e doc
 | 5 | API REST: entrada pela matrícula, papéis de trabalhador, escalador e operador, ProblemDetails, concorrência otimista e idempotência | ✅ |
 | 6 | O aplicativo do trabalhador, para o celular e para quem tem mais idade: "Minha escala" numa tela, letra grande, alto contraste, botões grandes, ouvir a escala, linguagem simples — com a acessibilidade conferida por teste | ✅ |
 | 7 | Avisos e tempo real: notificação quando sai a escala e antes de fechar a habilitação, a escala ao vivo e o painel do escalador e do operador | ✅ |
-| 8 | Observabilidade, Docker e entrega contínua | |
+| 8 | Observabilidade, Docker e entrega contínua | ✅ |
 
 ## O que já está pronto
 
@@ -351,6 +352,18 @@ O projeto é construído em partes, cada uma entregue funcionando, testada e doc
 - **A notificação no celular**, pelo Web Push do próprio navegador, sem serviço de terceiros: a mensagem cifrada como manda a RFC 8291, assinada com VAPID (RFC 8292), com a urgência e a validade de cada tipo — a habilitação que fecha não serve depois que fechou. A entrega é tentada até cinco vezes, e a inscrição que o navegador abandonou é apagada. Sem as chaves configuradas, o recado fica só no aplicativo, e a tela diz isso.
 - **O quadro do escalador e do operador**, como o quadro de parede de hoje: por período, cada categoria com a situação — sem escalação, habilitação por abrir, aberta, travada, escalada, encerrada — e o número de habilitados; cada terno com as vagas pedidas, escaladas e em aberto, a situação em palavra, e quem está em cada vaga. A requisição que chegou depois da escala aparece fora do prazo. O operador vê só os ternos que a empresa dele pediu.
 
+**Parte 8 — a observabilidade, os contêineres e a entrega**
+
+- **O OpenTelemetry na API**, como no crm-obras e no planejamento-obras: cada pedido é um rastro, com o que ele fez no banco, e os logs vão no mesmo rastro. O destino é a configuração padrão (`OTEL_EXPORTER_OTLP_ENDPOINT`); no compose, o painel do .NET Aspire.
+- **O que é só da escala também é medido**: cada celular chamado pela entrega dos recados, com o resultado — entregue, recusado, inscrição vencida —, os recados que a vigia dos prazos deixou, as telas ligadas ao vivo agora e as mudanças mandadas a elas. Nenhuma medida leva matrícula, nome ou celular.
+- **A saúde olha o que roda sozinho.** `/saude/viva` falha se a entrega dos recados ou a vigia dos prazos param de girar — reiniciar resolve. `/saude/pronta` falha sem o banco, e fica "Degraded" sem a escuta do banco: a API continua lendo e gravando, e a resposta diz que as telas não se atualizam sozinhas até ela voltar.
+- **Três imagens de um Dockerfile só**: a API, sobre a base sem shell e sem root, com a base de fusos do relógio do porto; o migrador, um executável que roda e sai; e o aplicativo, no nginx, com a API na mesma origem.
+- **O compose sobe a escala inteira**, como produção: o PostgreSQL com o papel da aplicação, que lê e grava mas não muda o esquema; o migrador; a API com a entrega e a vigia; o aplicativo; e o painel. O push é opcional, com as chaves num `push.env` fora do Git.
+- **O nginx não quebra o que já funciona**: a resposta da API passa sem gzip, e a ETag chega forte para o `If-Match`; os eventos do servidor passam na hora; o service worker vai sem cache, e o manifesto com o tipo certo.
+- **A entrega publica o que foi testado.** A cada commit da `main` com o CI verde, e a cada versão, as imagens são compiladas uma vez, sobem no compose e passam por um teste de fumaça no Chrome de celular — a ETag inteira pelo nginx, a tela do trabalhador ao vivo com o axe, o quadro que muda sozinho quando a escalação abre. Só então vão para o GitHub Container Registry, com a proveniência assinada.
+
+![O rastro de uma escalação aberta no painel do OpenTelemetry: o pedido PUT e os dois comandos no PostgreSQL dentro dele](docs/imagens/rastro.png)
+
 ## Decisões
 
 As decisões que mudam o desenho do sistema estão registradas em [`docs/adr`](docs/adr):
@@ -376,6 +389,9 @@ As decisões que mudam o desenho do sistema estão registradas em [`docs/adr`](d
 - [ADR-0019](docs/adr/0019-os-avisos.md) — os avisos: escritos para o trabalhador, guardados com a escala, e um por fato.
 - [ADR-0020](docs/adr/0020-o-tempo-real-e-o-aviso-no-celular.md) — o tempo real e o aviso no celular: o banco anuncia, o servidor transmite, e o push vai cifrado.
 - [ADR-0021](docs/adr/0021-o-quadro-do-escalador-e-do-operador.md) — o quadro do escalador e do operador: o quadro de parede, com quem está em cada vaga.
+- [ADR-0022](docs/adr/0022-observabilidade.md) — a observabilidade: o OpenTelemetry, a saúde que olha o que é só da escala, e o que a escala mede.
+- [ADR-0023](docs/adr/0023-a-pilha-em-conteineres.md) — a pilha em contêineres: três imagens de um Dockerfile só, e o compose como produção em miniatura.
+- [ADR-0024](docs/adr/0024-a-entrega-continua.md) — a entrega contínua: as imagens testadas são as publicadas.
 
 E algumas que não precisaram de ADR:
 
@@ -409,7 +425,9 @@ E algumas que não precisaram de ADR:
   - a requisição repetida dez vezes ao mesmo tempo, que cria uma só;
   - vinte habilitações e duas desistências ao mesmo tempo, sem nenhum "tente de novo";
   - o recado que chega ao serviço de push de mentira, decifrado pelo teste com a chave do navegador, e a inscrição abandonada que é apagada;
-  - os eventos de cada papel, e o quadro de cada um.
+  - os eventos de cada papel — sem a escala de outra categoria, nem o recado de outro trabalhador —, e o quadro de cada um;
+  - o recado que o serviço de push recusou, que vai de novo, e cada tipo com a sua tela, a sua validade e o seu tópico;
+  - a saúde com e sem o banco, sem a escuta e com o laço parado; o rastro de cada pedido, com o banco dentro dele, e o da volta da entrega; e as medidas de cada API, separadas das dos outros testes pela fábrica de medidores dela.
 - **Os recados e o tempo real no banco de verdade**: a escala gravada deixa um recado para cada habilitado, e o substituto ganha o dele; o mesmo recado não entra duas vezes; o que um servidor reservou só vai por outro depois que a reserva vence; depois de cinco tentativas, ele fica só no aplicativo; e o anúncio chega a quem escuta, com o que mudou. A cifra do push confere com o exemplo da própria RFC 8291.
 - **Os endpoints conferidos um a um**: todos têm política; todo endpoint que grava declara uma coisa só, entre a versão lida, a chave e o motivo de dispensar as duas; o documento OpenAPI descreve os cabeçalhos; e o contrato publicado é o que a API serve.
 - **O aplicativo, tela por tela**, com a API de mentira do MSW e o axe em cada uma — as WCAG 2.2 até o nível AA:
@@ -423,6 +441,8 @@ E algumas que não precisaram de ADR:
   - o aplicativo abre sem sinal, com a escala guardada;
   - o axe em cada tela, com o contraste de 7:1 no tema claro, no escuro e no contraste alto;
   - numa largura de 320px com a letra muito grande, nenhuma tela rola para o lado e nenhuma palavra de botão, do menu ou de título é cortada ao meio; e todo botão tem 48px.
+- **As imagens de produção, antes de sair**, na pilha do compose, com a fumaça no Chrome de celular: o que só o nginx, a base da imagem e o papel do banco poderiam quebrar.
+- **A sabotagem**: em cada parte, defeitos plantados um a um no código — a condição invertida, o filtro que some, o cabeçalho que não vai — e os testes rodados de novo. O que sobrevive vira teste. Na Parte 7, os testes pegam os 83.
 - **Arquitetura.** O domínio só referencia a biblioteca padrão; toda classe pública é selada, estática ou abstrata; nenhuma propriedade tem `set` público; os valores não têm construtor público; os internos só são visíveis à persistência; e todo agregado tem identidade própria.
 
 ## Como rodar
@@ -525,6 +545,34 @@ npm --prefix e2e run teste
 
 Com `IMAGENS=1`, os mesmos testes fotografam as telas deste README, em `docs/imagens`.
 
+A escala inteira em contêineres — o PostgreSQL com o papel da aplicação, a migração, a API, o aplicativo e o painel do OpenTelemetry — sobe com o Docker:
+
+```bash
+docker compose up --build
+```
+
+O aplicativo abre em `http://localhost:5390`, a API em `http://localhost:5391` e o painel dos rastros, métricas e logs em `http://localhost:18890`. A API aceita a chave dos testes de ponta a ponta, e o token de entrada sai do próprio repositório:
+
+```bash
+node e2e/apoio/token.ts --matricula 4127 --nome "Antônio Ferreira"
+```
+
+Para o recado chegar ao celular também no compose, as chaves VAPID vão num `push.env`, que o Git ignora. No PowerShell, em ASCII, que o Docker lê:
+
+```powershell
+docker compose run --rm --no-deps api chaves-vapid | Out-File -Encoding ascii push.env
+```
+
+```powershell
+Add-Content -Encoding ascii push.env "Avisos__Push__Contato=mailto:voce@example.com"
+```
+
+Com a pilha de pé, o teste de fumaça das imagens, o mesmo da entrega — com `IMAGENS=1`, ele fotografa o rastro do painel:
+
+```bash
+npm --prefix e2e run teste:imagens
+```
+
 ## Estrutura
 
 ```text
@@ -535,6 +583,8 @@ src/EscalaAvulsos.Api/                      a API REST: o contrato HTTP, a segur
   Recursos/                                 o trabalhador em /api/eu, os trabalhadores, as requisições, as escalações, as escalas, os eventos e o quadro
   Avisos/                                   a entrega dos recados ao celular e o vigia dos prazos
   TempoReal/                                a central que repassa os anúncios do banco a quem escuta
+  Operacao/                                 o que a escala mede, e a saúde da escuta e dos laços
+src/EscalaAvulsos.Observabilidade/          o OpenTelemetry e as verificações de saúde
 src/EscalaAvulsos.Dominio/                  regras do negócio, sem dependências
   Comum/                                    exceção de domínio, identidade, relógio do porto, mês, dinheiro e textos
   Identificacao/                            matrícula, CPF, CNPJ e número IMO
@@ -562,6 +612,7 @@ web/                                        o aplicativo do trabalhador, do esca
   src/offline/                              a escala guardada no aparelho e o aviso de sem internet
   public/sw.js                              o service worker, que guarda a casca para abrir sem sinal e mostra a notificação
 e2e/                                        a tarde de quinta no Chrome, numa tela de celular, com o axe
+  imagens/                                  a fumaça das imagens de produção, na pilha do compose
 tests/EscalaAvulsos.Api.Ensaio/             a API do ensaio: a mesma API, com o relógio que o teste acerta
 tests/EscalaAvulsos.Api.Testes/             a API inteira, em memória, com um banco por teste
 tests/EscalaAvulsos.Dominio.Testes/         exemplos, propriedades e o exemplo deste README
@@ -570,7 +621,11 @@ tests/EscalaAvulsos.Arquitetura.Testes/     regras que o domínio não pode queb
 docs/adr/                                   decisões de arquitetura
 docs/analise-do-sistema-atual.md            o sistema de hoje, o que os usuários relatam e o que muda aqui
 docs/api/                                   o catálogo dos problemas e o contrato OpenAPI publicado
-docs/imagens/                               as telas do aplicativo, fotografadas pelos testes de ponta a ponta
+docs/imagens/                               as telas do aplicativo e o rastro do painel, fotografados pelos testes de ponta a ponta
+docker/                                     o nginx do aplicativo e o papel da aplicação no banco
+Dockerfile                                  as três imagens: a API, o migrador e o aplicativo
+compose.yaml                                a escala inteira em contêineres, com o painel do OpenTelemetry
+.github/workflows/                          o CI, o ponta a ponta e a entrega das imagens
 ```
 
 ## Licença
