@@ -31,7 +31,7 @@ Há mais de um servidor da API, e o que um grava os outros precisam ficar sabend
 
 - **O servidor se identifica com chaves VAPID** (RFC 8292), da configuração (`Avisos:Push`). Cada envio leva um JWT assinado em ES256, que vale por doze horas. Sem as chaves, o push fica desligado, e o resto continua.
 - **A mensagem vai cifrada para aquele navegador só** (RFC 8291): uma chave de curva elíptica nova a cada mensagem, o segredo combinado por ECDH e o conteúdo em AES-128-GCM. A cifra é feita com a criptografia do próprio .NET, sem biblioteca de fora, e o teste a confere byte a byte com o exemplo da RFC.
-- **O navegador inscrito** guarda o endereço do serviço de push e as duas chaves dele, por trabalhador, em `PUT /api/eu/avisos/inscricao`. O endereço é a chave da linha: o celular que passa a ser usado com outra matrícula leva os avisos de quem entrou por último.
+- **O navegador inscrito** guarda o endereço do serviço de push e as duas chaves dele, por trabalhador, em `PUT /api/eu/avisos/push`. O endereço é a chave da linha: o celular que passa a ser usado com outra matrícula leva os avisos de quem entrou por último.
 - **Quem entrega é o servidor, pela caixa de saída da ADR-0019.** Cada aviso novo acorda a entrega, e a cada trinta segundos ela olha de novo o que ficou. A resposta do serviço de push decide o resto:
   - "201" entregou;
   - "404" ou "410" quer dizer que a inscrição venceu, e ela é apagada;

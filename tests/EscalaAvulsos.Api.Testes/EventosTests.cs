@@ -64,6 +64,25 @@ public sealed class EventosTests(BancoDeTestes bancos) : TestesDaApi(bancos)
         Assert.Null(await doAntonio.Proximo(TimeSpan.FromSeconds(1)));
     }
 
+    [Fact]
+    public async Task O_trabalhador_nao_recebe_a_escala_de_outra_categoria_nem_o_recado_de_outro_trabalhador()
+    {
+        await Tarde.Preparar();
+        var central = await EscutaDePe();
+        await using var doAntonio = await Fluxo.Abrir(Trabalhador(Antonio), Task.FromResult(central));
+        await doAntonio.Proximo();
+
+        var quintaATarde = new DateTimeOffset(2026, 11, 5, 13, 0, 0, TimeSpan.FromHours(-3));
+        central.Publicar(new AnuncioDoBanco(OrigemDoAnuncio.Escalas, Categoria.Capatazia, quintaATarde, null));
+        central.Publicar(new AnuncioDoBanco(OrigemDoAnuncio.Avisos, null, null, TrabalhadorId.Novo()));
+        central.Publicar(new AnuncioDoBanco(OrigemDoAnuncio.Escalas, Categoria.Estiva, quintaATarde, null));
+
+        // Dos três anúncios, só o último é dele: a escala da estiva. A da capatazia e o recado de outro não chegam.
+        Assert.Equal(
+            ("mudou", new EventoResposta(OrigemDoAnuncio.Escalas, Categoria.Estiva, new DateOnly(2026, 11, 5), Turno.Tarde)),
+            await doAntonio.Proximo());
+    }
+
     /// <summary>Espera a escuta do banco desta API ficar de pé: antes dela, nenhum anúncio chega a ninguém.</summary>
     private async Task<CentralDeAnuncios> EscutaDePe()
     {

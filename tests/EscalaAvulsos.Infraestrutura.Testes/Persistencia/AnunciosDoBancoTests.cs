@@ -38,6 +38,30 @@ public sealed class AnunciosDoBancoTests(BancoDeTestes bancos) : TestesComBanco(
     }
 
     [Fact]
+    public async Task A_desistencia_e_o_cancelamento_tambem_anunciam_nao_so_a_criacao()
+    {
+        await Banco.Gravar(_tarde.Trabalhadores, [_tarde.Requisicao], _tarde.Escalacao);
+        var escala = await Banco.FazerAEscala(_tarde.Escalacao.Id, Em(5, 10));
+        await using var escuta = await Escuta.Abrir(Banco.ConexaoDaAplicacao);
+
+        // A desistência muda a escala; o cancelamento muda a requisição. As duas são atualizações, e não criações.
+        await Banco.Desistir(escala.Id, _tarde.Edson.Id, Em(5, 11));
+        await using (var sessao = Banco.NovaSessao())
+        {
+            var lida = (await sessao.Requisicoes.Obter(_tarde.Requisicao.Id, Cancelamento))!;
+            lida.Agregado.Cancelar("O navio atrasou", Em(5, 11));
+            await sessao.Requisicoes.Atualizar(lida.Agregado, lida.Versao, Cancelamento);
+        }
+
+        // O substituto ganha um aviso: são três anúncios, a escala, o aviso e a requisição.
+        var anuncios = await escuta.Receber(quantos: 3);
+        var doPeriodo = new AnuncioDoBanco(OrigemDoAnuncio.Escalas, Categoria.Estiva, QuintaATarde.Inicio, null);
+
+        Assert.Contains(doPeriodo, anuncios);
+        Assert.Contains(doPeriodo with { Origem = OrigemDoAnuncio.Requisicoes }, anuncios);
+    }
+
+    [Fact]
     public async Task A_gravacao_desfeita_nao_anuncia_nada()
     {
         await Banco.Gravar(_tarde.Trabalhadores, []);

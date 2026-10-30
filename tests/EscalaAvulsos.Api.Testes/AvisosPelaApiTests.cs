@@ -141,6 +141,42 @@ public sealed class AvisosPelaApiTests(BancoDeTestes bancos) : TestesDaApi(banco
         Assert.Empty((await Trabalhador(Antonio).Ler("/api/eu/avisos").LerComSucesso<MeusAvisosResposta>()).Avisos);
     }
 
+    [Fact]
+    public async Task O_recado_que_o_servico_recusou_vai_de_novo_e_cada_tipo_abre_a_sua_tela_e_vale_o_seu_tempo()
+    {
+        ComPush();
+        await Tarde.Preparar();
+        await Escalador().CadastrarEstivador(4140, "Gilberto Souza");
+        await Trabalhador(4140).Enviar(HttpMethod.Put, "/api/eu/avisos/push", ServicoDePushDosTestes.Inscricao("do-gilberto")).ComSucesso();
+        var vigia = Servicos.GetRequiredService<VigiaDosPrazos>();
+        var entrega = Servicos.GetRequiredService<EntregaDosAvisos>();
+
+        // Às 9h05, o Gilberto não se habilitou, e o exame dele vence em 30/11: dois recados. O serviço de push está fora do ar.
+        Relogio.Acertar(Em(5, 9, 5));
+        await vigia.ConferirAsHabilitacoes(Cancelamento);
+        await vigia.ConferirOsVencimentos(Cancelamento);
+        _servicoDePush.Responder("do-gilberto", HttpStatusCode.InternalServerError);
+        await entrega.Entregar(Cancelamento);
+        Assert.Equal(2, _servicoDePush.Recebidas.Count(recebida => recebida.Endereco.AbsolutePath.EndsWith("do-gilberto", StringComparison.Ordinal)));
+
+        // O serviço voltou e a reserva venceu: os dois vão de novo, porque a recusa não conta como entrega.
+        _servicoDePush.Recebidas.Clear();
+        _servicoDePush.Responder("do-gilberto", HttpStatusCode.Created);
+        Relogio.Acertar(Em(5, 9, 8));
+        await entrega.Entregar(Cancelamento);
+
+        var recebidas = _servicoDePush.Recebidas.ToList();
+        var habilitacao = Assert.Single(recebidas, recebida => recebida.Conteudo.Titulo == "A habilitação vai fechar");
+        var exame = Assert.Single(recebidas, recebida => recebida.Conteudo.Titulo == "O exame médico vai vencer");
+
+        // A habilitação abre a tela de se habilitar, é urgente, e não vale depois que fechar; o exame pode esperar uns dias.
+        Assert.Equal(("/habilitacao", "3600", "high"), (habilitacao.Conteudo.Endereco, habilitacao.Cabecalhos["TTL"], habilitacao.Cabecalhos["Urgency"]));
+        Assert.Equal(("/meus-dados", "259200", "normal"), (exame.Conteudo.Endereco, exame.Cabecalhos["TTL"], exame.Cabecalhos["Urgency"]));
+
+        // O serviço guarda um recado por tópico: com o mesmo tópico, o do exame apagaria o da habilitação.
+        Assert.NotEqual(habilitacao.Cabecalhos["Topic"], exame.Cabecalhos["Topic"]);
+    }
+
     protected override void Configurar(IWebHostBuilder api)
     {
         if (!_comPush)

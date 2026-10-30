@@ -76,7 +76,7 @@ test('às 10h a escala sai, e aparece sozinha no celular aberto do Antônio, que
   await escalador.dispose();
 
   await expect(tarde).toContainText('Você vai trabalhar');
-  await expect(page.getByRole('link', { name: 'Recados 1 novo' })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Recados 1 novo', exact: true })).toBeVisible();
   await expect(tarde.getByRole('definition')).toHaveText([
     'Sinaleiro, no terno 1',
     'Atlântico Sul',

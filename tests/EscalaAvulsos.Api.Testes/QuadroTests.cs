@@ -47,6 +47,22 @@ public sealed class QuadroTests(BancoDeTestes bancos) : TestesDaApi(bancos)
     }
 
     [Fact]
+    public async Task Antes_de_abrir_a_habilitacao_vai_abrir_e_depois_do_periodo_a_escala_encerrada_fica_encerrada()
+    {
+        var escala = await Tarde.Escalar();
+
+        // A escalação da sexta à tarde, aberta na quinta às 10h05: a habilitação dela só abre na sexta, à 1h.
+        Relogio.Acertar(Em(5, 10, 5));
+        await Escalador().Enviar(HttpMethod.Put, "/api/escalacoes/Estiva/2026-11-06/Tarde").ComSucesso();
+        Assert.Equal(SituacaoDaCategoriaNoQuadro.HabilitacaoVaiAbrir, Assert.Single((await Escalador().Ler("/api/quadro/2026-11-06/Tarde").LerComSucesso<QuadroResposta>()).Categorias).Situacao);
+
+        Relogio.Acertar(Em(5, 19));
+        await Escalador().Enviar(HttpMethod.Post, $"/api/escalas/{escala.Id}/encerramento", versao: 1).ComSucesso();
+
+        Assert.Equal(SituacaoDaCategoriaNoQuadro.Encerrada, Assert.Single((await Escalador().Ler(DaQuinta).LerComSucesso<QuadroResposta>()).Categorias).Situacao);
+    }
+
+    [Fact]
     public async Task O_operador_ve_so_os_ternos_dele_e_o_trabalhador_nao_ve_o_quadro()
     {
         await Tarde.Escalar();

@@ -51,6 +51,23 @@ public sealed class AvisosNoBancoTests(BancoDeTestes bancos) : TestesComBanco(ba
     }
 
     [Fact]
+    public async Task Os_avisos_do_trabalhador_vem_do_mais_novo_para_o_mais_antigo()
+    {
+        await GravarATarde();
+
+        await using var sessao = Banco.NovaSessao();
+        var avisos = Avisos(sessao);
+
+        // O da escala, das 10h, é guardado antes do aviso do exame, das 9h: a ordem é a de quando nasceram, e não a de quando entraram.
+        await avisos.Guardar(AvisosDaEscala.DaEscalaQueSaiu(_tarde.Escalar()), Cancelamento);
+        await avisos.Guardar(AvisosDosPrazos.DosVencimentos(_tarde.Antonio, Em(5, 9)), Cancelamento);
+
+        Assert.Equal(
+            [TipoDoAviso.VaiTrabalhar, TipoDoAviso.ExameVaiVencer],
+            (await avisos.DoTrabalhador(_tarde.Antonio.Id, 10, Cancelamento)).Select(guardado => guardado.Aviso.Tipo));
+    }
+
+    [Fact]
     public async Task O_mesmo_aviso_nao_entra_duas_vezes_e_os_lidos_ficam_lidos()
     {
         await GravarATarde();
