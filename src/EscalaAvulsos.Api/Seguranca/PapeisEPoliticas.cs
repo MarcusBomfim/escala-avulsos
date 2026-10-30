@@ -24,6 +24,12 @@ public static class Politicas
 
     /// <summary>O papel de operador, com um CNPJ válido no token: é em nome dele que as requisições são feitas.</summary>
     public const string Requisitar = "requisitar";
+
+    /// <summary>Qualquer dos três papéis: os eventos do servidor, que cada um recebe filtrados pelo que é dele (ADR-0020).</summary>
+    public const string Escutar = "escutar";
+
+    /// <summary>O escalador, que vê o quadro inteiro, ou o operador com CNPJ, que vê os ternos dele (ADR-0021).</summary>
+    public const string VerOQuadro = "ver-o-quadro";
 }
 
 /// <summary>Os nomes das reivindicações que a API lê do token, tal como vêm nele.</summary>

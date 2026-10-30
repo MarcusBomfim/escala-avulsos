@@ -1117,6 +1117,227 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/api/quadro/{dia}/{turno}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          dia: string;
+          turno: string;
+        };
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            'application/json': components['schemas']['QuadroResposta'];
+          };
+        };
+      };
+    };
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/eventos': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            'text/event-stream': components['schemas']['SseItemOfEventoResposta'];
+          };
+        };
+      };
+    };
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/eu/avisos': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            'application/json': components['schemas']['MeusAvisosResposta'];
+          };
+        };
+      };
+    };
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/eu/avisos/lidos': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** @description Marca como lidos os recados de quem pede: repetir o pedido não muda nada, e nenhum outro mexe nos recados dele. */
+    post: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description No Content */
+        204: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content?: never;
+        };
+      };
+    };
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/eu/avisos/push': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            'application/json': components['schemas']['ChaveDoPushResposta'];
+          };
+        };
+      };
+    };
+    /** @description A inscrição é do navegador, pelo endereço dele: guardar de novo a mesma deixa tudo como estava. */
+    put: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      requestBody: {
+        content: {
+          'application/json': components['schemas']['InscricaoDoPushPedido'];
+        };
+      };
+      responses: {
+        /** @description No Content */
+        204: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content?: never;
+        };
+      };
+    };
+    post?: never;
+    /** @description Tirar o navegador que já saiu não muda nada: o pedido repetido é o mesmo pedido. */
+    delete: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      requestBody: {
+        content: {
+          'application/json': components['schemas']['FimDaInscricaoPedido'];
+        };
+      };
+      responses: {
+        /** @description No Content */
+        204: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content?: never;
+        };
+      };
+    };
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -1126,6 +1347,14 @@ export interface components {
       emitidoEm: string;
       /** Format: date */
       validoAte: string;
+    };
+    AvisoResposta: {
+      tipo: components['schemas']['TipoDoAviso'];
+      titulo: string;
+      texto: string;
+      /** Format: date-time */
+      criadoEm: string;
+      lido: boolean;
     };
     CancelamentoDaRequisicao: {
       motivo: string;
@@ -1138,6 +1367,20 @@ export interface components {
     /** @enum {unknown} */
     Categoria:
       'Capatazia' | 'Estiva' | 'ConferenciaDeCarga' | 'ConsertoDeCarga' | 'VigilanciaDeEmbarcacoes' | 'Bloco';
+    CategoriaNoQuadro: {
+      categoria: components['schemas']['Categoria'];
+      situacao: components['schemas']['SituacaoDaCategoriaNoQuadro'];
+      /** Format: date-time */
+      abreEm: null | string;
+      /** Format: date-time */
+      fechaEm: null | string;
+      /** Format: int32 */
+      habilitados: number;
+      ternos: components['schemas']['TernoNoQuadro'][];
+    };
+    ChaveDoPushResposta: {
+      chavePublica: string;
+    };
     /** @enum {unknown} */
     Comparecimento: 'Aguardando' | 'Presente' | 'Falta' | 'FaltaJustificada';
     EscalacaoResposta: {
@@ -1174,6 +1417,13 @@ export interface components {
       funcao: string;
       matriculas: number[];
     };
+    EventoResposta: {
+      origem: null | components['schemas']['OrigemDoAnuncio'];
+      categoria: null | components['schemas']['Categoria'];
+      /** Format: date */
+      dia: null | string;
+      turno: null | components['schemas']['Turno'];
+    };
     ExtratoResposta: {
       descricao: string;
       linhas: components['schemas']['LinhaDoExtratoResposta'][];
@@ -1185,6 +1435,9 @@ export interface components {
       decimoTerceiro: number;
       /** Format: double */
       fgts: number;
+    };
+    FimDaInscricaoPedido: {
+      endereco: string;
     };
     FimDoAfastamento: {
       /** Format: date */
@@ -1212,6 +1465,12 @@ export interface components {
       /** Format: int32 */
       diasImpedidos: number;
     };
+    FuncaoNoQuadro: {
+      funcao: string;
+      /** Format: int32 */
+      pedidas: number;
+      escalados: components['schemas']['PessoaNoQuadro'][];
+    };
     HabilitacaoResposta: {
       /** Format: int32 */
       matricula: number;
@@ -1230,6 +1489,11 @@ export interface components {
     };
     /** @enum {unknown} */
     Inscricao: 'Cadastrado' | 'Registrado';
+    InscricaoDoPushPedido: {
+      endereco: string;
+      chavePublica: string;
+      segredo: string;
+    };
     JustificativaDaFalta: {
       /** Format: int32 */
       matricula: number;
@@ -1263,6 +1527,11 @@ export interface components {
       mes: string;
       frequencia: components['schemas']['FrequenciaResposta'];
       extrato: components['schemas']['ExtratoResposta'];
+    };
+    MeusAvisosResposta: {
+      /** Format: int32 */
+      naoLidos: number;
+      avisos: components['schemas']['AvisoResposta'][];
     };
     MinhaEscalaResposta: {
       /** Format: uuid */
@@ -1351,6 +1620,8 @@ export interface components {
       nome: string;
       cnpj: string;
     };
+    /** @enum {unknown} */
+    OrigemDoAnuncio: 'Escalacoes' | 'Escalas' | 'Requisicoes' | 'Avisos' | null;
     PedidoDeHabilitacao: {
       funcoes: string[];
     };
@@ -1364,10 +1635,19 @@ export interface components {
       /** Format: date-time */
       fim: string;
     };
+    PessoaNoQuadro: {
+      /** Format: int32 */
+      matricula: number;
+      nome: string;
+    };
     PosicaoNaEspera: {
       funcao: string;
       /** Format: int32 */
       posicao: number;
+    };
+    QuadroResposta: {
+      periodo: components['schemas']['PeriodoResposta'];
+      categorias: components['schemas']['CategoriaNoQuadro'][];
     };
     QualificacaoResposta: {
       funcao: string;
@@ -1396,9 +1676,14 @@ export interface components {
       canceladaEm: null | string;
     };
     /** @enum {unknown} */
+    SituacaoDaCategoriaNoQuadro:
+      'SemEscalacao' | 'HabilitacaoVaiAbrir' | 'HabilitacaoAberta' | 'Travada' | 'Escalada' | 'Encerrada';
+    /** @enum {unknown} */
     SituacaoDaFrequencia: 'Cumprida' | 'EmAndamento' | 'Descumprida';
     /** @enum {unknown} */
     SituacaoDaRequisicao: 'Aberta' | 'Cancelada';
+    /** @enum {unknown} */
+    SituacaoDoTernoNoQuadro: 'AguardandoAEscala' | 'Completo' | 'Incompleto' | 'Cancelado' | 'ForaDoPrazo';
     SituacaoResposta: {
       /** Format: int32 */
       matricula: number;
@@ -1415,6 +1700,29 @@ export interface components {
       justificativaDaFalta: null | string;
       motivos: components['schemas']['MotivoResposta'][];
     };
+    SseItemOfEventoResposta: {
+      data?: components['schemas']['EventoResposta'];
+      eventType?: null | string;
+      eventId?: null | string;
+      reconnectionInterval?: null | string;
+    };
+    TernoNoQuadro: {
+      /** Format: uuid */
+      requisicao: string;
+      operador: components['schemas']['OperadorResposta'];
+      navio: components['schemas']['NavioResposta'];
+      local: components['schemas']['LocalResposta'];
+      /** Format: int32 */
+      terno: number;
+      /** Format: int32 */
+      pedidas: number;
+      /** Format: int32 */
+      escaladas: number;
+      /** Format: int32 */
+      emAberto: number;
+      situacao: components['schemas']['SituacaoDoTernoNoQuadro'];
+      funcoes: components['schemas']['FuncaoNoQuadro'][];
+    };
     TernoResposta: {
       /** Format: int32 */
       numero: number;
@@ -1425,6 +1733,14 @@ export interface components {
     /** @enum {unknown} */
     TipoDeMotivoNaEscala:
       'EmDescanso' | 'NaoApto' | 'NaoAlcancado' | 'VagasComRegistrados' | 'SemVagaNaFuncao';
+    /** @enum {unknown} */
+    TipoDoAviso:
+      | 'VaiTrabalhar'
+      | 'FicouDeFora'
+      | 'EntrouPelaEspera'
+      | 'HabilitacaoVaiFechar'
+      | 'ExameVaiVencer'
+      | 'ReciclagemVaiVencer';
     TrabalhadorDaEscala: {
       /** Format: int32 */
       matricula: number;

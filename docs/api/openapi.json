@@ -1176,6 +1176,155 @@
           }
         }
       }
+    },
+    "/api/quadro/{dia}/{turno}": {
+      "get": {
+        "tags": [
+          "Quadro"
+        ],
+        "parameters": [
+          {
+            "name": "dia",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "turno",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QuadroResposta"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/eventos": {
+      "get": {
+        "tags": [
+          "Tempo real"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/event-stream": {
+                "schema": {
+                  "$ref": "#/components/schemas/SseItemOfEventoResposta"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/eu/avisos": {
+      "get": {
+        "tags": [
+          "Eu"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MeusAvisosResposta"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/eu/avisos/lidos": {
+      "post": {
+        "tags": [
+          "Eu"
+        ],
+        "description": "Marca como lidos os recados de quem pede: repetir o pedido não muda nada, e nenhum outro mexe nos recados dele.",
+        "responses": {
+          "204": {
+            "description": "No Content"
+          }
+        }
+      }
+    },
+    "/api/eu/avisos/push": {
+      "get": {
+        "tags": [
+          "Eu"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChaveDoPushResposta"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Eu"
+        ],
+        "description": "A inscrição é do navegador, pelo endereço dele: guardar de novo a mesma deixa tudo como estava.",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InscricaoDoPushPedido"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "No Content"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Eu"
+        ],
+        "description": "Tirar o navegador que já saiu não muda nada: o pedido repetido é o mesmo pedido.",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FimDaInscricaoPedido"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "No Content"
+          }
+        }
+      }
     }
   },
   "components": {
@@ -1194,6 +1343,35 @@
           "validoAte": {
             "type": "string",
             "format": "date"
+          }
+        },
+        "additionalProperties": false
+      },
+      "AvisoResposta": {
+        "required": [
+          "tipo",
+          "titulo",
+          "texto",
+          "criadoEm",
+          "lido"
+        ],
+        "type": "object",
+        "properties": {
+          "tipo": {
+            "$ref": "#/components/schemas/TipoDoAviso"
+          },
+          "titulo": {
+            "type": "string"
+          },
+          "texto": {
+            "type": "string"
+          },
+          "criadoEm": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "lido": {
+            "type": "boolean"
           }
         },
         "additionalProperties": false
@@ -1236,6 +1414,62 @@
           "VigilanciaDeEmbarcacoes",
           "Bloco"
         ]
+      },
+      "CategoriaNoQuadro": {
+        "required": [
+          "categoria",
+          "situacao",
+          "abreEm",
+          "fechaEm",
+          "habilitados",
+          "ternos"
+        ],
+        "type": "object",
+        "properties": {
+          "categoria": {
+            "$ref": "#/components/schemas/Categoria"
+          },
+          "situacao": {
+            "$ref": "#/components/schemas/SituacaoDaCategoriaNoQuadro"
+          },
+          "abreEm": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "fechaEm": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "habilitados": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "ternos": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TernoNoQuadro"
+            }
+          }
+        },
+        "additionalProperties": false
+      },
+      "ChaveDoPushResposta": {
+        "required": [
+          "chavePublica"
+        ],
+        "type": "object",
+        "properties": {
+          "chavePublica": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
       },
       "Comparecimento": {
         "enum": [
@@ -1387,6 +1621,55 @@
         },
         "additionalProperties": false
       },
+      "EventoResposta": {
+        "required": [
+          "origem",
+          "categoria",
+          "dia",
+          "turno"
+        ],
+        "type": "object",
+        "properties": {
+          "origem": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/OrigemDoAnuncio"
+              }
+            ]
+          },
+          "categoria": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/Categoria"
+              }
+            ]
+          },
+          "dia": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date"
+          },
+          "turno": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/Turno"
+              }
+            ]
+          }
+        },
+        "additionalProperties": false
+      },
       "ExtratoResposta": {
         "required": [
           "descricao",
@@ -1422,6 +1705,18 @@
           "fgts": {
             "type": "number",
             "format": "double"
+          }
+        },
+        "additionalProperties": false
+      },
+      "FimDaInscricaoPedido": {
+        "required": [
+          "endereco"
+        ],
+        "type": "object",
+        "properties": {
+          "endereco": {
+            "type": "string"
           }
         },
         "additionalProperties": false
@@ -1500,6 +1795,30 @@
         },
         "additionalProperties": false
       },
+      "FuncaoNoQuadro": {
+        "required": [
+          "funcao",
+          "pedidas",
+          "escalados"
+        ],
+        "type": "object",
+        "properties": {
+          "funcao": {
+            "type": "string"
+          },
+          "pedidas": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "escalados": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PessoaNoQuadro"
+            }
+          }
+        },
+        "additionalProperties": false
+      },
       "HabilitacaoResposta": {
         "required": [
           "matricula",
@@ -1566,6 +1885,26 @@
           "Cadastrado",
           "Registrado"
         ]
+      },
+      "InscricaoDoPushPedido": {
+        "required": [
+          "endereco",
+          "chavePublica",
+          "segredo"
+        ],
+        "type": "object",
+        "properties": {
+          "endereco": {
+            "type": "string"
+          },
+          "chavePublica": {
+            "type": "string"
+          },
+          "segredo": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
       },
       "JustificativaDaFalta": {
         "required": [
@@ -1686,6 +2025,26 @@
           },
           "extrato": {
             "$ref": "#/components/schemas/ExtratoResposta"
+          }
+        },
+        "additionalProperties": false
+      },
+      "MeusAvisosResposta": {
+        "required": [
+          "naoLidos",
+          "avisos"
+        ],
+        "type": "object",
+        "properties": {
+          "naoLidos": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "avisos": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AvisoResposta"
+            }
           }
         },
         "additionalProperties": false
@@ -2029,6 +2388,15 @@
         },
         "additionalProperties": false
       },
+      "OrigemDoAnuncio": {
+        "enum": [
+          "Escalacoes",
+          "Escalas",
+          "Requisicoes",
+          "Avisos",
+          null
+        ]
+      },
       "PedidoDeHabilitacao": {
         "required": [
           "funcoes"
@@ -2075,6 +2443,23 @@
         },
         "additionalProperties": false
       },
+      "PessoaNoQuadro": {
+        "required": [
+          "matricula",
+          "nome"
+        ],
+        "type": "object",
+        "properties": {
+          "matricula": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "nome": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
       "PosicaoNaEspera": {
         "required": [
           "funcao",
@@ -2088,6 +2473,25 @@
           "posicao": {
             "type": "integer",
             "format": "int32"
+          }
+        },
+        "additionalProperties": false
+      },
+      "QuadroResposta": {
+        "required": [
+          "periodo",
+          "categorias"
+        ],
+        "type": "object",
+        "properties": {
+          "periodo": {
+            "$ref": "#/components/schemas/PeriodoResposta"
+          },
+          "categorias": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CategoriaNoQuadro"
+            }
           }
         },
         "additionalProperties": false
@@ -2190,6 +2594,16 @@
         },
         "additionalProperties": false
       },
+      "SituacaoDaCategoriaNoQuadro": {
+        "enum": [
+          "SemEscalacao",
+          "HabilitacaoVaiAbrir",
+          "HabilitacaoAberta",
+          "Travada",
+          "Escalada",
+          "Encerrada"
+        ]
+      },
       "SituacaoDaFrequencia": {
         "enum": [
           "Cumprida",
@@ -2201,6 +2615,15 @@
         "enum": [
           "Aberta",
           "Cancelada"
+        ]
+      },
+      "SituacaoDoTernoNoQuadro": {
+        "enum": [
+          "AguardandoAEscala",
+          "Completo",
+          "Incompleto",
+          "Cancelado",
+          "ForaDoPrazo"
         ]
       },
       "SituacaoResposta": {
@@ -2284,6 +2707,90 @@
         },
         "additionalProperties": false
       },
+      "SseItemOfEventoResposta": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/EventoResposta"
+          },
+          "eventType": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "eventId": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "reconnectionInterval": {
+            "pattern": "^-?(\\d+\\.)?\\d{2}:\\d{2}:\\d{2}(\\.\\d{1,7})?$",
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        },
+        "additionalProperties": false
+      },
+      "TernoNoQuadro": {
+        "required": [
+          "requisicao",
+          "operador",
+          "navio",
+          "local",
+          "terno",
+          "pedidas",
+          "escaladas",
+          "emAberto",
+          "situacao",
+          "funcoes"
+        ],
+        "type": "object",
+        "properties": {
+          "requisicao": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "operador": {
+            "$ref": "#/components/schemas/OperadorResposta"
+          },
+          "navio": {
+            "$ref": "#/components/schemas/NavioResposta"
+          },
+          "local": {
+            "$ref": "#/components/schemas/LocalResposta"
+          },
+          "terno": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "pedidas": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "escaladas": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "emAberto": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "situacao": {
+            "$ref": "#/components/schemas/SituacaoDoTernoNoQuadro"
+          },
+          "funcoes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FuncaoNoQuadro"
+            }
+          }
+        },
+        "additionalProperties": false
+      },
       "TernoResposta": {
         "required": [
           "numero",
@@ -2318,6 +2825,16 @@
           "NaoAlcancado",
           "VagasComRegistrados",
           "SemVagaNaFuncao"
+        ]
+      },
+      "TipoDoAviso": {
+        "enum": [
+          "VaiTrabalhar",
+          "FicouDeFora",
+          "EntrouPelaEspera",
+          "HabilitacaoVaiFechar",
+          "ExameVaiVencer",
+          "ReciclagemVaiVencer"
         ]
       },
       "TrabalhadorDaEscala": {
@@ -2526,6 +3043,12 @@
     },
     {
       "name": "Trabalhadores"
+    },
+    {
+      "name": "Quadro"
+    },
+    {
+      "name": "Tempo real"
     }
   ]
 }

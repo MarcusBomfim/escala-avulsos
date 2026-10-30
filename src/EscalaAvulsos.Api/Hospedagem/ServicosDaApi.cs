@@ -1,11 +1,14 @@
 using System.Text.Json.Serialization;
+using EscalaAvulsos.Api.Avisos;
 using EscalaAvulsos.Api.Http;
 using EscalaAvulsos.Api.Seguranca;
+using EscalaAvulsos.Api.TempoReal;
 using EscalaAvulsos.Infraestrutura.Persistencia;
+using EscalaAvulsos.Infraestrutura.TempoReal;
 
 namespace EscalaAvulsos.Api.Hospedagem;
 
-/// <summary>Os serviços da API: persistência, segurança, erros, JSON, documentação e a configuração do porto.</summary>
+/// <summary>Os serviços da API: persistência, segurança, erros, JSON, documentação, a configuração do porto, os avisos e o tempo real.</summary>
 internal static class ServicosDaApi
 {
     public static WebApplicationBuilder AdicionarApi(this WebApplicationBuilder builder)
@@ -16,6 +19,7 @@ internal static class ServicosDaApi
         builder.Services.AdicionarPersistencia(conexao);
         builder.Services.AdicionarSeguranca();
         builder.Services.AddSingleton(ConfiguracaoDoPorto.Ler(builder.Configuration.GetSection("Porto")));
+        AdicionarAvisosETempoReal(builder, conexao);
 
         builder.Services.AddProblemDetails(opcoes => opcoes.CustomizeProblemDetails = Problemas.Completar);
         builder.Services.AddExceptionHandler<TradutorDeExcecoes>();
@@ -45,5 +49,32 @@ internal static class ServicosDaApi
         });
 
         return builder;
+    }
+
+    /// <summary>
+    /// A escuta do banco e a central que repassa os anúncios (ADR-0020), e os
+    /// avisos: a entrega aos celulares e a vigia dos prazos (ADR-0019). As duas
+    /// últimas rodam sozinhas, a não ser que a configuração diga que não — nos
+    /// testes, quem as chama é o teste, na hora que ele escolhe.
+    /// </summary>
+    private static void AdicionarAvisosETempoReal(WebApplicationBuilder builder, string conexao)
+    {
+        var avisos = ConfiguracaoDosAvisos.Ler(builder.Configuration.GetSection("Avisos"));
+
+        builder.Services.AddSingleton(avisos);
+        builder.Services.AddSingleton(new OuvinteDoBanco(conexao));
+        builder.Services.AddSingleton<CentralDeAnuncios>();
+        builder.Services.AddHostedService<EscutaDoBanco>();
+
+        // O serviço de push que não responde em dez segundos fica para a próxima volta.
+        builder.Services.AddHttpClient(nameof(EntregaDosAvisos), cliente => cliente.Timeout = TimeSpan.FromSeconds(10));
+        builder.Services.AddSingleton<EntregaDosAvisos>();
+        builder.Services.AddSingleton<VigiaDosPrazos>();
+
+        if (avisos.ConferirEEntregarSozinho)
+        {
+            builder.Services.AddHostedService<EntregaDosAvisosSozinha>();
+            builder.Services.AddHostedService<VigiaDosPrazosSozinha>();
+        }
     }
 }

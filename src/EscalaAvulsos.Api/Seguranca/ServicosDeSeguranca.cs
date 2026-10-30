@@ -49,7 +49,13 @@ internal static class ServicosDeSeguranca
             .AddPolicy(Politicas.Requisitar, politica => politica
                 .Combine(comPapel)
                 .RequireRole(Papeis.Operador)
-                .RequireAssertion(contexto => QuemPede.LerCnpj(contexto.User) is not null));
+                .RequireAssertion(contexto => QuemPede.LerCnpj(contexto.User) is not null))
+            .AddPolicy(Politicas.Escutar, comPapel)
+            .AddPolicy(Politicas.VerOQuadro, politica => politica
+                .Combine(comPapel)
+                .RequireAssertion(contexto =>
+                    contexto.User.IsInRole(Papeis.Escalador)
+                    || (contexto.User.IsInRole(Papeis.Operador) && QuemPede.LerCnpj(contexto.User) is not null)));
 
         return servicos;
     }

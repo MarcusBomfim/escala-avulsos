@@ -80,6 +80,9 @@ public abstract class TestesDaApi(BancoDeTestes bancos) : IAsyncLifetime
         {
             builder.UseEnvironment("Testes");
             builder.UseSetting("ConnectionStrings:Escala", conexao);
+
+            // A entrega dos avisos e a vigia dos prazos não rodam sozinhas: o teste as chama quando quer, com o relógio dele.
+            builder.UseSetting("Avisos:ConferirEEntregarSozinho", "false");
             ajuste(builder);
             builder.ConfigureTestServices(servicos =>
             {
