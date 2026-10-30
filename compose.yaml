@@ -1,0 +1,101 @@
+# A escala inteira em contêineres, como vai para produção (ADR-0023): o
+# PostgreSQL com o papel da aplicação, a migração, a API, o aplicativo e o
+# painel do OpenTelemetry.
+#
+#   docker compose up --build
+#
+# O aplicativo fica em http://localhost:5390 e a API em http://localhost:5391.
+# O painel dos rastros, métricas e logs fica em http://localhost:18890.
+#
+# As senhas têm valor padrão para rodar na máquina de quem desenvolve; em
+# qualquer outro lugar, vêm do ambiente. As imagens, por padrão, são as
+# compiladas aqui; REGISTRO e VERSAO apontam para as publicadas.
+#
+# O aviso no celular precisa das chaves VAPID, num push.env ao lado deste
+# arquivo (o README diz como gerar). Sem ele, os recados ficam só no
+# aplicativo. O navegador só aceita o push em https ou em localhost.
+
+name: escala-avulsos
+
+# O provedor de identidade é o dos testes de ponta a ponta: uma chave de
+# teste, pública no repositório. Em produção, o do órgão gestor.
+x-identidade: &identidade
+  Authentication__Schemes__Bearer__ValidIssuer: escala-avulsos-e2e
+  Authentication__Schemes__Bearer__ValidAudiences__0: escala-avulsos-e2e
+  Authentication__Schemes__Bearer__SigningKeys__0__Issuer: escala-avulsos-e2e
+  Authentication__Schemes__Bearer__SigningKeys__0__Value: ZXNjYWxhLWF2dWxzb3MtZTJlOiBjaGF2ZSBkb3MgdGVzdGVzIGRlIHBvbnRhIGEgcG9udGE=
+
+# As conexões não tentam a criptografia GSS, do Kerberos: a base sem shell não
+# traz a biblioteca dele, e o Npgsql deixaria um erro inofensivo no log a
+# cada processo que sobe.
+
+services:
+  banco:
+    image: postgres:17.10-alpine@sha256:742f40ea20b9ff2ff31db5458d127452988a2164df9e17441e191f3b72252193
+    environment:
+      POSTGRES_DB: escala_avulsos
+      POSTGRES_PASSWORD: ${SENHA_DO_BANCO:-postgres}
+      SENHA_DA_APLICACAO: ${SENHA_DA_APLICACAO:-aplicacao}
+    volumes:
+      - ./docker/banco:/docker-entrypoint-initdb.d:ro
+      - banco:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD', 'pg_isready', '--username', 'postgres', '--dbname', 'escala_avulsos']
+      interval: 2s
+      timeout: 5s
+      retries: 30
+
+  # Roda as migrações como o dono das tabelas, e sai. A API só sobe depois
+  # que ele termina bem.
+  migrador:
+    image: ${REGISTRO:-escala-avulsos}-migrador:${VERSAO:-local}
+    build:
+      context: .
+      target: migrador
+    environment:
+      ConnectionStrings__Escala: Host=banco;Database=escala_avulsos;Username=postgres;Password=${SENHA_DO_BANCO:-postgres};GSS Encryption Mode=Disable
+    depends_on:
+      banco:
+        condition: service_healthy
+
+  # A API, com a entrega dos recados e a vigia dos prazos rodando dentro
+  # dela. As chaves do push, quando houver, vêm do push.env.
+  api:
+    image: ${REGISTRO:-escala-avulsos}-api:${VERSAO:-local}
+    build:
+      context: .
+      target: api
+    environment:
+      <<: *identidade
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://observabilidade:18889
+      ConnectionStrings__Escala: Host=banco;Database=escala_avulsos;Username=escala_aplicacao;Password=${SENHA_DA_APLICACAO:-aplicacao};GSS Encryption Mode=Disable
+    env_file:
+      - path: push.env
+        required: false
+    ports:
+      - 5391:8080
+    depends_on:
+      migrador:
+        condition: service_completed_successfully
+
+  web:
+    image: ${REGISTRO:-escala-avulsos}-web:${VERSAO:-local}
+    build:
+      context: .
+      target: web
+    ports:
+      - 5390:8080
+    depends_on:
+      - api
+
+  # O painel do .NET Aspire, sozinho: recebe rastros, métricas e logs por OTLP
+  # e os mostra. Sem login: é para a máquina de quem desenvolve.
+  observabilidade:
+    image: mcr.microsoft.com/dotnet/aspire-dashboard:13.6.2@sha256:4f494c0b519ba58e56f8bb6830041f8ab071e6842c1f4dd1b474d4793dbe1593
+    environment:
+      ASPIRE_DASHBOARD_UNSECURED_ALLOW_ANONYMOUS: 'true'
+    ports:
+      - 18890:18888
+
+volumes:
+  banco:

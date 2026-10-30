@@ -6,6 +6,9 @@
 # dotenv files
 .env
 
+# As chaves VAPID do push no compose: segredo de quem roda, fora do Git.
+push.env
+
 # User-specific files
 *.rsuser
 *.suo
