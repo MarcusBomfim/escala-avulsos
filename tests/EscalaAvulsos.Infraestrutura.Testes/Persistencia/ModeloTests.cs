@@ -20,14 +20,17 @@ public sealed class ModeloTests
     }
 
     [Fact]
-    public void O_esquema_tem_as_tabelas_dos_agregados_das_vagas_dos_rodizios_e_das_chaves()
+    public void O_esquema_tem_as_tabelas_dos_agregados_das_vagas_dos_rodizios_das_chaves_e_dos_avisos()
     {
         using var contexto = new FabricaDoContextoEmTempoDeDesenho().CreateDbContext([]);
 
         var tabelas = contexto.Model.GetEntityTypes().Select(entidade => $"{entidade.GetSchema()}.{entidade.GetTableName()}").Order(StringComparer.Ordinal);
 
         Assert.Equal(
-            ["escala.chaves_de_idempotencia", "escala.engajamentos", "escala.escalacoes", "escala.escalas", "escala.requisicoes", "escala.rodizios", "escala.trabalhadores"],
+            [
+                "escala.avisos", "escala.chaves_de_idempotencia", "escala.engajamentos", "escala.escalacoes", "escala.escalas",
+                "escala.inscricoes_de_push", "escala.requisicoes", "escala.rodizios", "escala.trabalhadores",
+            ],
             tabelas);
     }
 }

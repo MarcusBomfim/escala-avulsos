@@ -29,6 +29,16 @@ internal static class FormatoBrasileiro
     /// <summary>"05/11/2026".</summary>
     public static string Data(DateOnly data) => data.ToString("dd/MM/yyyy", CultureInfo.InvariantCulture);
 
+    private static readonly string[] DiasDaSemana =
+        ["domingo", "segunda-feira", "terça-feira", "quarta-feira", "quinta-feira", "sexta-feira", "sábado"];
+
+    private static readonly string[] Meses =
+        ["janeiro", "fevereiro", "março", "abril", "maio", "junho", "julho", "agosto", "setembro", "outubro", "novembro", "dezembro"];
+
+    /// <summary>"quinta-feira, 5 de novembro": o dia como se fala, para o aviso que o trabalhador lê.</summary>
+    public static string DiaPorExtenso(DateOnly dia) =>
+        $"{DiasDaSemana[(int)dia.DayOfWeek]}, {dia.Day.ToString(CultureInfo.InvariantCulture)} de {Meses[dia.Month - 1]}";
+
     /// <summary>"7h", "13h": a hora cheia, como se fala no porto.</summary>
     public static string Hora(int hora) => $"{hora.ToString(CultureInfo.InvariantCulture)}h";
 
@@ -40,14 +50,20 @@ internal static class FormatoBrasileiro
     {
         var local = HorarioDoPorto.Local(instante);
 
-        var hora = (local.Hour, local.Minute) switch
+        return $"{Data(DateOnly.FromDateTime(local))}, {AHora(instante)}";
+    }
+
+    /// <summary>A hora do instante no relógio do porto, com a preposição: "às 10h", "à 1h", "às 4h30", "à meia-noite", "ao meio-dia".</summary>
+    public static string AHora(DateTimeOffset instante)
+    {
+        var local = HorarioDoPorto.Local(instante);
+
+        return (local.Hour, local.Minute) switch
         {
             (0, 0) => "à meia-noite",
             (12, 0) => "ao meio-dia",
             var (horas, minutos) => $"{(horas <= 1 ? "à" : "às")} {Hora(horas)}{(minutos == 0 ? string.Empty : minutos.ToString("00", CultureInfo.InvariantCulture))}",
         };
-
-        return $"{Data(DateOnly.FromDateTime(local))}, {hora}";
     }
 
     /// <summary>"11 horas", "1 hora", "2 horas e 30 minutos", "45 minutos".</summary>

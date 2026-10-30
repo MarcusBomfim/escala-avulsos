@@ -64,7 +64,9 @@ public sealed class BancoDeTestes : IAsyncLifetime
     {
         try
         {
-            _conteiner = new PostgreSqlBuilder(Imagem).Build();
+            // Os testes rodam em paralelo, cada um com o seu banco — e o pool de conexões dele, e a escuta dos anúncios:
+            // as cem conexões do padrão acabam antes dos testes.
+            _conteiner = new PostgreSqlBuilder(Imagem).WithCommand("-c", "max_connections=400").Build();
             await _conteiner.StartAsync();
         }
         catch (DockerUnavailableException erro) when (!EmIntegracaoContinua)

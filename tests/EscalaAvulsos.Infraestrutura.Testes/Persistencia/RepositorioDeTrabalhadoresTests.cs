@@ -38,6 +38,23 @@ public sealed class RepositorioDeTrabalhadoresTests(BancoDeTestes bancos) : Test
     }
 
     [Fact]
+    public async Task Os_da_categoria_vem_na_ordem_das_matriculas_e_os_de_outra_nao_vem()
+    {
+        await using var sessao = Banco.NovaSessao();
+        var conferente = new Trabalhador(new DadosDoTrabalhador(
+            Matricula.De(4142), "Ivo Nunes", TrabalhadoresDeTeste.CpfDaMatricula(4142), Categoria.ConferenciaDeCarga, Inscricao.Registrado));
+
+        foreach (var trabalhador in (Trabalhador[])[TrabalhadoresDeTeste.Estivador(4130, "Benedito Lima"), conferente, TrabalhadoresDeTeste.Estivador()])
+        {
+            await sessao.Trabalhadores.Adicionar(trabalhador, Cancelamento);
+        }
+
+        var estivadores = await sessao.Trabalhadores.DaCategoria(Categoria.Estiva, Cancelamento);
+
+        Assert.Equal(["Antônio Ferreira", "Benedito Lima"], estivadores.Select(trabalhador => trabalhador.Nome));
+    }
+
+    [Fact]
     public async Task Os_habilitados_vem_na_ordem_das_matriculas_e_os_que_nao_existem_nao_vem()
     {
         await using var sessao = Banco.NovaSessao();

@@ -58,6 +58,26 @@ public sealed class RepositorioDeEscalacoes(ContextoDoBanco contexto, TimeProvid
         return [.. escalacoes.Select(escalacao => escalacao.Agregado)];
     }
 
+    /// <summary>
+    /// As escalações de todas as categorias cujo período começa entre os dois
+    /// instantes, na ordem dos períodos: as que o servidor confere para avisar
+    /// da habilitação que vai fechar (ADR-0019), e as do quadro (ADR-0021).
+    /// </summary>
+    public async Task<IReadOnlyList<Escalacao>> QueComecamEntre(DateTimeOffset de, DateTimeOffset ate, CancellationToken cancelamento = default)
+    {
+        var desde = de.ToUniversalTime();
+        var antesDe = ate.ToUniversalTime();
+        var escalacoes = await _tabela.Consultar(
+            registros => registros
+                .Where(registro => registro.Inicio >= desde && registro.Inicio < antesDe)
+                .OrderBy(registro => registro.Inicio)
+                .ThenBy(registro => registro.Categoria),
+            registro => registro.ParaEscalacao(),
+            cancelamento);
+
+        return [.. escalacoes.Select(escalacao => escalacao.Agregado)];
+    }
+
     /// <summary>As escalações do mês em que o trabalhador se habilitou, na ordem dos períodos — para a frequência (ADR-0009).</summary>
     public async Task<IReadOnlyList<Escalacao>> DoTrabalhadorNoMes(TrabalhadorId trabalhador, Mes mes, CancellationToken cancelamento = default)
     {

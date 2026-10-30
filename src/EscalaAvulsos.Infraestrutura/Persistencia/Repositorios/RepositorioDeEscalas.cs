@@ -1,3 +1,4 @@
+using EscalaAvulsos.Dominio.Avisos;
 using EscalaAvulsos.Dominio.Comum;
 using EscalaAvulsos.Dominio.Escalacoes;
 using EscalaAvulsos.Dominio.Periodos;
@@ -10,7 +11,8 @@ namespace EscalaAvulsos.Infraestrutura.Persistencia.Repositorios;
 
 /// <summary>
 /// Grava e lê escalas — e, junto com cada uma, numa transação só, as vagas,
-/// que o banco confere, e o rodízio da categoria (ADR-0013).
+/// que o banco confere, o rodízio da categoria (ADR-0013) e os avisos que ela
+/// dá aos habilitados (ADR-0019).
 /// </summary>
 /// <remarks>
 /// <para>
@@ -132,7 +134,7 @@ public sealed class RepositorioDeEscalas(ContextoDoBanco contexto, TimeProvider 
         return [.. jornadas.Select(jornada => new Jornada(new TrabalhadorId(jornada.TrabalhadorId), Periodo.Contendo(jornada.Inicio)))];
     }
 
-    /// <summary>Grava a escala nova, as vagas dela e o rodízio da categoria, que passa a partir dela.</summary>
+    /// <summary>Grava a escala nova, as vagas dela, o rodízio da categoria, que passa a partir dela, e o aviso de cada habilitado.</summary>
     /// <param name="versaoDoRodizio">A versão do rodízio de onde a escala partiu, como <see cref="RodizioDa"/> a deu.</param>
     /// <returns>A versão gravada: 1.</returns>
     /// <exception cref="ConflitoDeConcorrencia">Outra escala da categoria andou o rodízio depois que ele foi lido.</exception>
@@ -148,6 +150,7 @@ public sealed class RepositorioDeEscalas(ContextoDoBanco contexto, TimeProvider 
             var versao = await _tabela.Inserir(RegistroDeEscala.De(escala, versao: 1, _tabela.Agora), Restricoes(escala), cancelamento);
             await GravarVagas(escala, cancelamento);
             await AndarORodizio(escala, versaoDoRodizio, cancelamento);
+            await CaixaDeAvisos.Guardar(contexto, AvisosDaEscala.DaEscalaQueSaiu(escala), cancelamento);
             await transacao.CommitAsync(cancelamento);
 
             return versao;
@@ -164,6 +167,7 @@ public sealed class RepositorioDeEscalas(ContextoDoBanco contexto, TimeProvider 
     /// Grava o que mudou na escala — a desistência, o substituto, a presença, a
     /// falta —, com as vagas de agora. Se a vez andou e o rodízio da categoria
     /// ainda parte desta escala, ele muda de versão: quem o leu antes refaz.
+    /// Quem ganhou uma vaga que não tinha — o substituto — é avisado.
     /// </summary>
     /// <param name="versaoLida">A versão em que a escala foi lida.</param>
     /// <returns>A versão nova.</returns>
@@ -178,6 +182,9 @@ public sealed class RepositorioDeEscalas(ContextoDoBanco contexto, TimeProvider 
 
         try
         {
+            // A escala como estava, para saber quem ganhou vaga com a mudança.
+            var anterior = await contexto.Escalas.AsNoTracking().SingleOrDefaultAsync(registro => registro.Id == nova.Id, cancelamento);
+
             // Antes de a escala nova ser gravada, enquanto o banco tem a de antes para comparar.
             await contexto.Database.ExecuteSqlAsync(
                 $"""
@@ -198,6 +205,13 @@ public sealed class RepositorioDeEscalas(ContextoDoBanco contexto, TimeProvider 
 
             await contexto.Engajamentos.Where(engajamento => engajamento.EscalaId == nova.Id).ExecuteDeleteAsync(cancelamento);
             await GravarVagas(escala, cancelamento);
+
+            if (anterior is not null)
+            {
+                var antes = _tabela.Abrir(anterior, registro => registro.ParaEscala());
+                await CaixaDeAvisos.Guardar(contexto, AvisosDaEscala.DaMudanca(antes, escala, nova.AtualizadoEm), cancelamento);
+            }
+
             await transacao.CommitAsync(cancelamento);
 
             return versao;

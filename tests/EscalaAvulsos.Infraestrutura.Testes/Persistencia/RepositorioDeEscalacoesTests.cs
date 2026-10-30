@@ -84,6 +84,26 @@ public sealed class RepositorioDeEscalacoesTests(BancoDeTestes bancos) : TestesC
     }
 
     [Fact]
+    public async Task As_escalacoes_que_comecam_entre_dois_instantes_vem_de_todas_as_categorias_na_ordem_dos_periodos()
+    {
+        await using var sessao = Banco.NovaSessao();
+        var tarde = DaEstiva();
+        var noite = new Escalacao(Categoria.Estiva, QuintaATarde.Seguinte, CalendarioDaEscalacao.Padrao);
+        var manha = new Escalacao(Categoria.Estiva, QuintaATarde.Anterior, CalendarioDaEscalacao.Padrao);
+        var daCapatazia = new Escalacao(Categoria.Capatazia, QuintaATarde, CalendarioDaEscalacao.Padrao);
+
+        foreach (var escalacao in (Escalacao[])[noite, daCapatazia, tarde, manha])
+        {
+            await sessao.Escalacoes.Adicionar(escalacao, Cancelamento);
+        }
+
+        // Das 7h às 19h: começam a manhã e as duas tardes; a noite, às 19h, fica para depois.
+        var doDia = await sessao.Escalacoes.QueComecamEntre(Em(5, 7), Em(5, 19), Cancelamento);
+
+        Assert.Equal([manha.Id, daCapatazia.Id, tarde.Id], doDia.Select(escalacao => escalacao.Id));
+    }
+
+    [Fact]
     public async Task As_escalacoes_da_categoria_que_ainda_nao_comecaram_vem_na_ordem_dos_periodos()
     {
         await using var sessao = Banco.NovaSessao();

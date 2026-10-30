@@ -1,3 +1,4 @@
+using EscalaAvulsos.Dominio.Avisos;
 using EscalaAvulsos.Dominio.Trabalhadores;
 using EscalaAvulsos.Infraestrutura.Persistencia.Idempotencia;
 using EscalaAvulsos.Infraestrutura.Persistencia.Registros;
@@ -43,6 +44,10 @@ public sealed class ContextoDoBanco(DbContextOptions<ContextoDoBanco> opcoes) : 
     internal DbSet<RegistroDoRodizio> Rodizios => Set<RegistroDoRodizio>();
 
     internal DbSet<RegistroDeIdempotencia> ChavesDeIdempotencia => Set<RegistroDeIdempotencia>();
+
+    internal DbSet<RegistroDeAviso> Avisos => Set<RegistroDeAviso>();
+
+    internal DbSet<RegistroDeInscricaoDePush> InscricoesDePush => Set<RegistroDeInscricaoDePush>();
 
     /// <summary>
     /// O Npgsql configurado como as migrações esperam — com o histórico delas
@@ -107,6 +112,72 @@ public sealed class ContextoDoBanco(DbContextOptions<ContextoDoBanco> opcoes) : 
         MapearEngajamentos(modelBuilder);
         MapearRodizios(modelBuilder);
         MapearChavesDeIdempotencia(modelBuilder);
+        MapearAvisos(modelBuilder);
+        MapearInscricoesDePush(modelBuilder);
+    }
+
+    /// <summary>
+    /// Os avisos de cada trabalhador, um por fato: a chave do aviso com o
+    /// trabalhador é a chave da linha. Cada aviso novo é anunciado pelo banco
+    /// (<c>pg_notify</c>), num gatilho escrito na migração (ADR-0019, ADR-0020).
+    /// </summary>
+    private static void MapearAvisos(ModelBuilder modelBuilder)
+    {
+        var avisos = modelBuilder.Entity<RegistroDeAviso>();
+
+        avisos.ToTable("avisos", tabela =>
+        {
+            tabela.HasCheckConstraint("ck_avisos_tipo", $"tipo in ({string.Join(", ", Enum.GetNames<TipoDoAviso>().Select(nome => $"'{nome}'"))})");
+            tabela.HasCheckConstraint("ck_avisos_tentativas", "tentativas >= 0");
+        });
+
+        avisos.HasKey(registro => new { registro.TrabalhadorId, registro.Chave }).HasName("pk_avisos");
+        avisos.Property(registro => registro.TrabalhadorId).HasColumnName("trabalhador_id");
+        avisos.Property(registro => registro.Chave).HasColumnName("chave").HasMaxLength(Aviso.TamanhoMaximoDaChave);
+        avisos.Property(registro => registro.Tipo).HasColumnName("tipo").HasMaxLength(30);
+        avisos.Property(registro => registro.Titulo).HasColumnName("titulo");
+        avisos.Property(registro => registro.Texto).HasColumnName("texto");
+        avisos.Property(registro => registro.CriadoEm).HasColumnName("criado_em");
+        avisos.Property(registro => registro.LidoEm).HasColumnName("lido_em");
+        avisos.Property(registro => registro.EntregueEm).HasColumnName("entregue_em");
+        avisos.Property(registro => registro.ReservadoEm).HasColumnName("reservado_em");
+        avisos.Property(registro => registro.Tentativas).HasColumnName("tentativas");
+
+        // Os recados de um trabalhador, do mais novo para o mais antigo: o que a tela dele lê.
+        avisos.HasIndex(registro => new { registro.TrabalhadorId, registro.CriadoEm }).HasDatabaseName("ix_avisos_trabalhador_id_criado_em");
+
+        // Só os que faltam entregar: é por aqui que o servidor procura o que mandar aos celulares.
+        avisos.HasIndex(registro => registro.CriadoEm).HasDatabaseName("ix_avisos_por_entregar").HasFilter("entregue_em is null");
+
+        avisos
+            .HasOne<RegistroDeTrabalhador>()
+            .WithMany()
+            .HasForeignKey(registro => registro.TrabalhadorId)
+            .HasConstraintName("fk_avisos_trabalhadores")
+            .OnDelete(DeleteBehavior.Cascade);
+    }
+
+    /// <summary>Os celulares que aceitaram os avisos, pelo endereço do serviço de push de cada um (ADR-0020).</summary>
+    private static void MapearInscricoesDePush(ModelBuilder modelBuilder)
+    {
+        var inscricoes = modelBuilder.Entity<RegistroDeInscricaoDePush>();
+
+        inscricoes.ToTable("inscricoes_de_push", tabela =>
+            tabela.HasCheckConstraint("ck_inscricoes_de_push_endereco", "endereco like 'https://%'"));
+
+        inscricoes.HasKey(registro => registro.Endereco).HasName("pk_inscricoes_de_push");
+        inscricoes.Property(registro => registro.Endereco).HasColumnName("endereco").HasMaxLength(2048);
+        inscricoes.Property(registro => registro.TrabalhadorId).HasColumnName("trabalhador_id");
+        inscricoes.Property(registro => registro.ChavePublica).HasColumnName("chave_publica").HasMaxLength(100);
+        inscricoes.Property(registro => registro.Segredo).HasColumnName("segredo").HasMaxLength(50);
+        inscricoes.Property(registro => registro.CriadaEm).HasColumnName("criada_em");
+        inscricoes.HasIndex(registro => registro.TrabalhadorId).HasDatabaseName("ix_inscricoes_de_push_trabalhador_id");
+        inscricoes
+            .HasOne<RegistroDeTrabalhador>()
+            .WithMany()
+            .HasForeignKey(registro => registro.TrabalhadorId)
+            .HasConstraintName("fk_inscricoes_de_push_trabalhadores")
+            .OnDelete(DeleteBehavior.Cascade);
     }
 
     /// <summary>A chave de idempotência de cada pedido de criação, de quem pediu, com a resposta dada a ele (ADR-0015).</summary>

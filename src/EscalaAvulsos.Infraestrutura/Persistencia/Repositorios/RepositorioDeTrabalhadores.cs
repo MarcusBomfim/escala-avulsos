@@ -45,6 +45,17 @@ public sealed class RepositorioDeTrabalhadores(ContextoDoBanco contexto, TimePro
         return [.. trabalhadores.Select(trabalhador => trabalhador.Agregado)];
     }
 
+    /// <summary>Os trabalhadores da categoria, na ordem das matrículas: quem o servidor confere para os avisos (ADR-0019).</summary>
+    public async Task<IReadOnlyList<Trabalhador>> DaCategoria(Categoria categoria, CancellationToken cancelamento = default)
+    {
+        var trabalhadores = await _tabela.Consultar(
+            registros => registros.Where(registro => registro.Categoria == categoria).OrderBy(registro => registro.Matricula),
+            registro => registro.ParaTrabalhador(),
+            cancelamento);
+
+        return [.. trabalhadores.Select(trabalhador => trabalhador.Agregado)];
+    }
+
     /// <returns>A versão gravada: 1.</returns>
     public Task<int> Adicionar(Trabalhador trabalhador, CancellationToken cancelamento = default)
     {
