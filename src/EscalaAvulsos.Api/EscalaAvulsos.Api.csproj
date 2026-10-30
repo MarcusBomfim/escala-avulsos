@@ -15,6 +15,7 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\EscalaAvulsos.Infraestrutura\EscalaAvulsos.Infraestrutura.csproj" />
+    <ProjectReference Include="..\EscalaAvulsos.Observabilidade\EscalaAvulsos.Observabilidade.csproj" />
   </ItemGroup>
   <ItemGroup>
     <InternalsVisibleTo Include="EscalaAvulsos.Api.Testes" />

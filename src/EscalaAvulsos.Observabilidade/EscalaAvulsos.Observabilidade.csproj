@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!--
+    O que a API precisa para ser observada e operada: rastros, métricas e logs
+    pelo OpenTelemetry, e as verificações de saúde que o orquestrador consulta
+    (ADR-0022). Não sabe nada de escala: as fontes e os medidores da escala
+    ficam onde a escala acontece, e só o nome deles começa igual.
+  -->
+  <PropertyGroup>
+    <RootNamespace>EscalaAvulsos.Observabilidade</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Npgsql.OpenTelemetry" />
+    <PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" />
+    <PackageReference Include="OpenTelemetry.Extensions.Hosting" />
+    <PackageReference Include="OpenTelemetry.Instrumentation.AspNetCore" />
+  </ItemGroup>
+</Project>

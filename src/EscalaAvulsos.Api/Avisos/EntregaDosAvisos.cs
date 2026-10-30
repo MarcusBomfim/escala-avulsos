@@ -3,6 +3,7 @@ using System.Text;
 using System.Text.Json;
 using System.Buffers.Text;
 using EscalaAvulsos.Api.Hospedagem;
+using EscalaAvulsos.Api.Operacao;
 using EscalaAvulsos.Api.TempoReal;
 using EscalaAvulsos.Dominio.Avisos;
 using EscalaAvulsos.Infraestrutura.Avisos;
@@ -27,6 +28,7 @@ public sealed partial class EntregaDosAvisos(
     ConfiguracaoDosAvisos configuracao,
     IHttpClientFactory clientes,
     TimeProvider relogio,
+    MedidasDosAvisos medidas,
     ILogger<EntregaDosAvisos> registro)
 {
     /// <summary>Por quanto tempo os avisos reservados ficam com este servidor.</summary>
@@ -38,6 +40,7 @@ public sealed partial class EntregaDosAvisos(
     /// <returns>Quantos avisos foram dados por entregues.</returns>
     public async Task<int> Entregar(CancellationToken cancelamento = default)
     {
+        using var volta = TelemetriaDaEscala.Fonte.StartActivity("entregar os recados");
         var entregues = 0;
 
         while (!cancelamento.IsCancellationRequested)
@@ -62,6 +65,8 @@ public sealed partial class EntregaDosAvisos(
                 break;
             }
         }
+
+        volta?.SetTag("escala.avisos.entregues", entregues);
 
         return entregues;
     }
@@ -102,6 +107,13 @@ public sealed partial class EntregaDosAvisos(
                 resultado = ResultadoDoPush.Recusado;
             }
 
+            medidas.Entrega(resultado switch
+            {
+                ResultadoDoPush.Entregue => "entregue",
+                ResultadoDoPush.InscricaoVencida => "inscricao_vencida",
+                _ => "recusado",
+            });
+
             if (resultado == ResultadoDoPush.InscricaoVencida)
             {
                 await inscricoes.Remover(inscricao.Endereco, cancelamento: cancelamento);
@@ -141,8 +153,12 @@ internal sealed partial class EntregaDosAvisosSozinha(
     EntregaDosAvisos entrega,
     CentralDeAnuncios central,
     ConfiguracaoDosAvisos configuracao,
+    VoltasDosLacos voltas,
     ILogger<EntregaDosAvisosSozinha> registro) : BackgroundService
 {
+    /// <summary>O nome deste laço na saúde (ADR-0022).</summary>
+    public const string Laco = "entrega dos recados";
+
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         using var ouvinte = central.Escutar();
@@ -157,6 +173,8 @@ internal sealed partial class EntregaDosAvisosSozinha(
             {
                 EntregaFalhou(erro);
             }
+
+            voltas.Girou(Laco);
 
             try
             {

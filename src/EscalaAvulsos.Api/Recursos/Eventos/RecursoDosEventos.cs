@@ -1,6 +1,7 @@
 using System.Net.ServerSentEvents;
 using System.Runtime.CompilerServices;
 using System.Security.Claims;
+using EscalaAvulsos.Api.Operacao;
 using EscalaAvulsos.Api.Seguranca;
 using EscalaAvulsos.Api.TempoReal;
 using EscalaAvulsos.Dominio.Periodos;
@@ -40,6 +41,7 @@ public sealed class RecursoDosEventos : IRecursoDaApi
 
     private static async Task<ServerSentEventsResult<EventoResposta>> Transmitir(
         CentralDeAnuncios central,
+        MedidasDoTempoReal medidas,
         RepositorioDeTrabalhadores trabalhadores,
         HttpContext http,
         CancellationToken cancelamento)
@@ -50,15 +52,17 @@ public sealed class RecursoDosEventos : IRecursoDaApi
         http.Response.Headers.CacheControl = "no-cache";
         http.Response.Headers["X-Accel-Buffering"] = "no";
 
-        return TypedResults.ServerSentEvents(Fluxo(central, filtro, http.RequestAborted));
+        return TypedResults.ServerSentEvents(Fluxo(central, medidas, filtro, http.RequestAborted));
     }
 
     private static async IAsyncEnumerable<SseItem<EventoResposta>> Fluxo(
         CentralDeAnuncios central,
+        MedidasDoTempoReal medidas,
         Func<AnuncioDoBanco, bool> eDeQuemPede,
         [EnumeratorCancellation] CancellationToken cancelamento)
     {
         using var ouvinte = central.Escutar();
+        using var ligada = medidas.Ligada();
 
         yield return new SseItem<EventoResposta>(EventoResposta.Vazio, "pronto");
 
@@ -95,6 +99,7 @@ public sealed class RecursoDosEventos : IRecursoDaApi
                 }
                 else if (eDeQuemPede(sinal.Anuncio))
                 {
+                    medidas.Mudanca(sinal.Anuncio.Origem);
                     yield return new SseItem<EventoResposta>(Evento(sinal.Anuncio), "mudou");
                 }
             }

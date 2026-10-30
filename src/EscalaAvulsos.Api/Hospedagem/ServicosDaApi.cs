@@ -1,14 +1,16 @@
 using System.Text.Json.Serialization;
 using EscalaAvulsos.Api.Avisos;
 using EscalaAvulsos.Api.Http;
+using EscalaAvulsos.Api.Operacao;
 using EscalaAvulsos.Api.Seguranca;
 using EscalaAvulsos.Api.TempoReal;
 using EscalaAvulsos.Infraestrutura.Persistencia;
 using EscalaAvulsos.Infraestrutura.TempoReal;
+using EscalaAvulsos.Observabilidade;
 
 namespace EscalaAvulsos.Api.Hospedagem;
 
-/// <summary>Os serviços da API: persistência, segurança, erros, JSON, documentação, a configuração do porto, os avisos e o tempo real.</summary>
+/// <summary>Os serviços da API: persistência, segurança, erros, JSON, documentação, a configuração do porto, os avisos, o tempo real e a observabilidade.</summary>
 internal static class ServicosDaApi
 {
     public static WebApplicationBuilder AdicionarApi(this WebApplicationBuilder builder)
@@ -16,6 +18,7 @@ internal static class ServicosDaApi
         var conexao = builder.Configuration.GetConnectionString("Escala")
             ?? throw new InvalidOperationException("Falta a cadeia de conexão ConnectionStrings:Escala.");
 
+        builder.AdicionarObservabilidade("escala-avulsos-api");
         builder.Services.AdicionarPersistencia(conexao);
         builder.Services.AdicionarSeguranca();
         builder.Services.AddSingleton(ConfiguracaoDoPorto.Ler(builder.Configuration.GetSection("Porto")));
@@ -63,6 +66,9 @@ internal static class ServicosDaApi
 
         builder.Services.AddSingleton(avisos);
         builder.Services.AddSingleton(new OuvinteDoBanco(conexao));
+        builder.Services.AddSingleton<MedidasDosAvisos>();
+        builder.Services.AddSingleton<MedidasDoTempoReal>();
+        builder.Services.AddSingleton<VoltasDosLacos>();
         builder.Services.AddSingleton<CentralDeAnuncios>();
         builder.Services.AddHostedService<EscutaDoBanco>();
 
@@ -71,10 +77,22 @@ internal static class ServicosDaApi
         builder.Services.AddSingleton<EntregaDosAvisos>();
         builder.Services.AddSingleton<VigiaDosPrazos>();
 
+        // Pronta é o banco no ar e a escuta de pé; viva, os laços girando, quando eles rodam (ADR-0022).
+        var saude = builder.Services.AddHealthChecks()
+            .VerificarBanco(conexao)
+            .AddCheck<EscutaDePe>("escuta", tags: [Saude.Pronta]);
+
         if (avisos.ConferirEEntregarSozinho)
         {
             builder.Services.AddHostedService<EntregaDosAvisosSozinha>();
             builder.Services.AddHostedService<VigiaDosPrazosSozinha>();
+
+            var intervalos = new Dictionary<string, TimeSpan>
+            {
+                [EntregaDosAvisosSozinha.Laco] = avisos.IntervaloDaEntrega,
+                [VigiaDosPrazosSozinha.Laco] = avisos.IntervaloDaConferencia,
+            };
+            saude.Add(new("lacos", servicos => new LacosGirando(servicos.GetRequiredService<VoltasDosLacos>(), intervalos), failureStatus: null, tags: [Saude.Viva]));
         }
     }
 }

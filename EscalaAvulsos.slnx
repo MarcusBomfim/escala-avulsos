@@ -3,6 +3,7 @@
     <Project Path="src/EscalaAvulsos.Api/EscalaAvulsos.Api.csproj" />
     <Project Path="src/EscalaAvulsos.Dominio/EscalaAvulsos.Dominio.csproj" />
     <Project Path="src/EscalaAvulsos.Infraestrutura/EscalaAvulsos.Infraestrutura.csproj" />
+    <Project Path="src/EscalaAvulsos.Observabilidade/EscalaAvulsos.Observabilidade.csproj" />
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/EscalaAvulsos.Api.Ensaio/EscalaAvulsos.Api.Ensaio.csproj" />

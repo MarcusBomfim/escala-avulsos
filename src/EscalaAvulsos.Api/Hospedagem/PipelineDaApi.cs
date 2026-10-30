@@ -1,5 +1,6 @@
 using EscalaAvulsos.Api.Http;
 using EscalaAvulsos.Api.Recursos;
+using EscalaAvulsos.Observabilidade;
 
 namespace EscalaAvulsos.Api.Hospedagem;
 
@@ -18,6 +19,7 @@ internal static class PipelineDaApi
         app.UseAuthorization();
         app.Use(GuardarCorpoDasCriacoes);
 
+        app.MapearSaude();
         app.MapOpenApi().AllowAnonymous();
         MapaDosRecursos.MapearTodos(app.MapGroup("/api"));
 

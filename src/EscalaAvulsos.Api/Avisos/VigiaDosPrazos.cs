@@ -1,4 +1,5 @@
 using EscalaAvulsos.Api.Hospedagem;
+using EscalaAvulsos.Api.Operacao;
 using EscalaAvulsos.Dominio.Avisos;
 using EscalaAvulsos.Dominio.Trabalhadores;
 using EscalaAvulsos.Infraestrutura.Persistencia.Repositorios;
@@ -11,7 +12,7 @@ namespace EscalaAvulsos.Api.Avisos;
 /// quem avisar é o domínio; daqui sai só a hora de perguntar e a gravação. O
 /// aviso que já existe não se repete — a chave dele não deixa.
 /// </summary>
-public sealed class VigiaDosPrazos(IServiceScopeFactory escopos, ConfiguracaoDosAvisos configuracao, TimeProvider relogio)
+public sealed class VigiaDosPrazos(IServiceScopeFactory escopos, ConfiguracaoDosAvisos configuracao, TimeProvider relogio, MedidasDosAvisos medidas)
 {
     /// <summary>Até onde olhar as escalações: o fechamento de qualquer uma que começa dentro de um dia.</summary>
     private static readonly TimeSpan Horizonte = TimeSpan.FromDays(1);
@@ -20,6 +21,7 @@ public sealed class VigiaDosPrazos(IServiceScopeFactory escopos, ConfiguracaoDos
     /// <returns>Quantos avisos novos.</returns>
     public async Task<int> ConferirAsHabilitacoes(CancellationToken cancelamento = default)
     {
+        using var conferencia = TelemetriaDaEscala.Fonte.StartActivity("conferir as habilitações");
         await using var escopo = escopos.CreateAsyncScope();
         var escalacoes = escopo.ServiceProvider.GetRequiredService<RepositorioDeEscalacoes>();
         var trabalhadores = escopo.ServiceProvider.GetRequiredService<RepositorioDeTrabalhadores>();
@@ -46,6 +48,9 @@ public sealed class VigiaDosPrazos(IServiceScopeFactory escopos, ConfiguracaoDos
                 cancelamento);
         }
 
+        medidas.Prazo("habilitacao", novos);
+        conferencia?.SetTag("escala.avisos.novos", novos);
+
         return novos;
     }
 
@@ -53,6 +58,7 @@ public sealed class VigiaDosPrazos(IServiceScopeFactory escopos, ConfiguracaoDos
     /// <returns>Quantos avisos novos.</returns>
     public async Task<int> ConferirOsVencimentos(CancellationToken cancelamento = default)
     {
+        using var conferencia = TelemetriaDaEscala.Fonte.StartActivity("conferir os vencimentos");
         await using var escopo = escopos.CreateAsyncScope();
         var trabalhadores = escopo.ServiceProvider.GetRequiredService<RepositorioDeTrabalhadores>();
         var avisos = escopo.ServiceProvider.GetRequiredService<RepositorioDeAvisos>();
@@ -69,6 +75,9 @@ public sealed class VigiaDosPrazos(IServiceScopeFactory escopos, ConfiguracaoDos
                 cancelamento);
         }
 
+        medidas.Prazo("vencimento", novos);
+        conferencia?.SetTag("escala.avisos.novos", novos);
+
         return novos;
     }
 }
@@ -78,8 +87,12 @@ internal sealed partial class VigiaDosPrazosSozinha(
     VigiaDosPrazos vigia,
     ConfiguracaoDosAvisos configuracao,
     TimeProvider relogio,
+    VoltasDosLacos voltas,
     ILogger<VigiaDosPrazosSozinha> registro) : BackgroundService
 {
+    /// <summary>O nome deste laço na saúde (ADR-0022).</summary>
+    public const string Laco = "vigia dos prazos";
+
     private static readonly TimeSpan DosVencimentos = TimeSpan.FromHours(1);
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -102,6 +115,8 @@ internal sealed partial class VigiaDosPrazosSozinha(
             {
                 ConferenciaFalhou(erro);
             }
+
+            voltas.Girou(Laco);
 
             try
             {
