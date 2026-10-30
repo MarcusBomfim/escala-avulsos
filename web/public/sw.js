@@ -77,3 +77,55 @@ self.addEventListener('fetch', (evento) => {
 
   evento.respondWith(caches.match(pedido, Guardado).then((guardado) => guardado ?? fetch(pedido)));
 });
+
+/*
+ * O recado que chega com o aplicativo fechado (ADR-0020): o servidor manda,
+ * cifrado, o título, o texto, a tela que o toque abre e de que fato ele é. A
+ * notificação nova do mesmo fato substitui a antiga, e toca de novo.
+ */
+self.addEventListener('push', (evento) => {
+  let recado = {
+    titulo: 'Escala dos Avulsos',
+    texto: 'Há recado novo para você.',
+    endereco: '/recados',
+    etiqueta: 'recado',
+  };
+
+  try {
+    recado = { ...recado, ...evento.data.json() };
+  } catch {
+    // Sem conteúdo que se leia, o aviso genérico: abrir os recados resolve.
+  }
+
+  evento.waitUntil(
+    self.registration.showNotification(recado.titulo, {
+      body: recado.texto,
+      tag: recado.etiqueta,
+      renotify: true,
+      icon: '/icone-192.png',
+      badge: '/icone-192.png',
+      lang: 'pt-BR',
+      data: { endereco: recado.endereco },
+    }),
+  );
+});
+
+// O toque na notificação abre a tela do recado: na janela do aplicativo que já estiver aberta, ou numa nova.
+self.addEventListener('notificationclick', (evento) => {
+  evento.notification.close();
+  const endereco = new URL(evento.notification.data?.endereco ?? '/recados', self.location.origin).href;
+
+  evento.waitUntil(
+    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(async (janelas) => {
+      const aberta = janelas.find((janela) => new URL(janela.url).origin === self.location.origin);
+
+      if (aberta) {
+        await aberta.focus();
+
+        return aberta.navigate(endereco);
+      }
+
+      return self.clients.openWindow(endereco);
+    }),
+  );
+});

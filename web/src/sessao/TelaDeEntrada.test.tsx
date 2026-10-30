@@ -31,11 +31,11 @@ describe('a entrada', () => {
     abrir('/entrar', { token: null });
 
     await userEvent.click(screen.getByLabelText('Token de acesso'));
-    await userEvent.paste(tokenDeTeste({ role: 'operador' }));
+    await userEvent.paste(tokenDeTeste({ role: 'visitante' }));
     await userEvent.click(screen.getByRole('button', { name: 'Entrar' }));
 
     expect(screen.getByRole('alert')).toHaveTextContent(
-      'Este aplicativo é do trabalhador, e o token não é de trabalhador.',
+      'O token não é de trabalhador, de escalador nem de operador.',
     );
     expect(screen.getByLabelText('Token de acesso')).toHaveAttribute('aria-invalid', 'true');
   });

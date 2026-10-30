@@ -91,9 +91,34 @@
   list-style: none;
 }
 
+/* Cinco áreas — as do trabalhador —: três em cima e duas embaixo, mais largas, para nenhuma ficar sozinha. */
+.menu:has(> li:nth-child(5)) {
+  grid-template-columns: repeat(6, 1fr);
+}
+
+.menu:has(> li:nth-child(5)) > li {
+  grid-column: span 2;
+}
+
+.menu:has(> li:nth-child(5)) > li:nth-child(n + 4) {
+  grid-column: span 3;
+}
+
 :global(:root[data-letra='grande']) .menu,
 :global(:root[data-letra='muito-grande']) .menu {
   grid-template-columns: repeat(2, 1fr);
+}
+
+/* O :nth-child(n) só pesa: ganha da regra das cinco áreas, que é mais específica. */
+:global(:root[data-letra='grande']) .menu > li:nth-child(n),
+:global(:root[data-letra='muito-grande']) .menu > li:nth-child(n) {
+  grid-column: auto;
+}
+
+/* Duas a duas, a área que sobra no fim fica com a linha inteira. */
+:global(:root[data-letra='grande']) .menu > li:last-child:nth-child(odd),
+:global(:root[data-letra='muito-grande']) .menu > li:last-child:nth-child(odd) {
+  grid-column: 1 / -1;
 }
 
 .menu a {
@@ -114,6 +139,17 @@
   line-height: 1.2;
   text-align: center;
   text-decoration: none;
+}
+
+/* Quantos recados novos, no canto da aba: o número em destaque, e a palavra para o leitor de tela. */
+.menu a :global(.contagem) {
+  min-width: 1.6em;
+  padding: 0 0.35em;
+  border-radius: 999px;
+  background: var(--sair);
+  color: var(--sair-texto);
+  font-size: 0.8rem;
+  line-height: 1.6;
 }
 
 .menu a :global(.icone) {
@@ -137,6 +173,11 @@
   padding: 0.5rem 1rem;
   border-bottom: 1px solid var(--barra-borda);
   background: var(--barra);
+}
+
+.horas {
+  display: grid;
+  gap: 0.15rem;
 }
 
 .conteudo {

@@ -18,6 +18,20 @@ const Desenhos = {
       <path d="M12 7v5l3 2" />
     </>
   ),
+  // O sino dos recados.
+  recados: (
+    <>
+      <path d="M6 16V11a6 6 0 0 1 12 0v5l2 2H4z" />
+      <path d="M10 21h4" />
+    </>
+  ),
+  // O quadro de parede: a tabela das linhas da escala.
+  quadro: (
+    <>
+      <rect x="3" y="4" width="18" height="16" rx="1" />
+      <path d="M3 9h18M3 14h18M9 9v11" />
+    </>
+  ),
   escala: (
     <>
       <rect x="3" y="5" width="18" height="16" rx="2" />

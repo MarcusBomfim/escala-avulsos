@@ -1,0 +1,45 @@
+.lista {
+  display: grid;
+  gap: 1rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* O recado como um bloco do sistema de hoje: o título na faixa cinza-azulada, o novo com a borda azul. */
+.recado {
+  display: grid;
+  gap: 0.6rem;
+  padding: 0 1rem 1rem;
+  border: 1px solid var(--rotulo-borda);
+  border-left: 0.5rem solid var(--borda-forte);
+  border-radius: var(--raio);
+  background: var(--superficie);
+}
+
+.recado > * {
+  margin: 0;
+}
+
+.novo {
+  border-left-color: var(--destaque);
+}
+
+.cabecalho {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem 0.75rem;
+  align-items: center;
+  justify-content: space-between;
+  margin: 0 -1rem;
+  padding: 0.6rem 1rem;
+  border-bottom: 1px solid var(--rotulo-borda);
+  border-radius: 0 calc(var(--raio) - 1px) 0 0;
+  background: var(--rotulo-fundo);
+}
+
+.quando {
+  color: var(--texto-suave);
+  font-size: 0.9rem;
+  font-weight: 700;
+}

@@ -5,16 +5,30 @@ import { Relogio } from '../comum/Relogio';
 import { BotaoDaLetra, BotaoDoContraste } from '../leitura/AjustesDaLeitura';
 import { AvisoDeConexao } from '../offline/AvisoDeConexao';
 import { useSessao } from '../sessao/contexto';
+import type { Sessao } from '../sessao/token';
+import { LigacaoAoVivo } from '../tempoReal/LigacaoAoVivo';
 import { entradasDoMenu } from './modulos';
 import estilos from './Moldura.module.css';
+
+const Papeis: Readonly<Record<Sessao['papel'], string>> = {
+  trabalhador: 'Trabalhador',
+  escalador: 'Escalador',
+  operador: 'Operador portuário',
+};
+
+/** Embaixo do nome: a matrícula do trabalhador, ou o papel de quem vê o quadro. */
+function quemE(sessao: Sessao): string {
+  return sessao.papel === 'trabalhador' ? `Matrícula ${String(sessao.matricula)}` : Papeis[sessao.papel];
+}
 
 /**
  * O que toda tela tem em volta, no desenho do sistema que o trabalhador já
  * conhece: a faixa azul com quem entrou e o "Sair" vermelho no canto; as
  * abas das áreas, cada uma com o ícone e a palavra; e a barra cinza, com o
- * relógio do porto e a letra, em cima de toda tela. No pé, o contraste, que
- * se escolhe uma vez. Sem sessão, manda para a entrada, e volta para cá
- * depois.
+ * relógio do porto, a ligação ao vivo e a letra, em cima de toda tela. No
+ * pé, o contraste, que se escolhe uma vez. Sem sessão, manda para a entrada,
+ * e volta para cá depois. O escalador e o operador têm só o quadro: o resto
+ * é do trabalhador.
  */
 export function Moldura() {
   const { sessao, sair } = useSessao();
@@ -37,6 +51,16 @@ export function Moldura() {
     return <Navigate to={`/entrar?de=${encodeURIComponent(local.pathname + local.search)}`} replace />;
   }
 
+  const doQuadro = local.pathname === '/quadro' || local.pathname.startsWith('/quadro/');
+
+  if (sessao.papel !== 'trabalhador' && !doQuadro) {
+    return <Navigate to="/quadro" replace />;
+  }
+
+  if (sessao.papel === 'trabalhador' && doQuadro) {
+    return <Navigate to="/" replace />;
+  }
+
   return (
     <div className={estilos.moldura}>
       <a href="#conteudo" className={estilos.pular}>
@@ -49,8 +73,8 @@ export function Moldura() {
             <Icone nome="marca" />
           </span>
           <p className={estilos.quem}>
-            <strong>{sessao.nome ?? 'Trabalhador'}</strong>
-            <span>Matrícula {sessao.matricula}</span>
+            <strong>{sessao.nome ?? Papeis[sessao.papel]}</strong>
+            <span>{quemE(sessao)}</span>
           </p>
           <button
             type="button"
@@ -67,11 +91,12 @@ export function Moldura() {
 
         <nav aria-label="Principal" className={estilos.abas}>
           <ul className={estilos.menu}>
-            {entradasDoMenu().map((entrada) => (
+            {entradasDoMenu(sessao.papel).map((entrada) => (
               <li key={entrada.caminho}>
                 <NavLink to={entrada.caminho} end={entrada.caminho === '/'}>
                   <Icone nome={entrada.icone} />
                   {entrada.rotulo}
+                  {entrada.Contagem && <entrada.Contagem />}
                 </NavLink>
               </li>
             ))}
@@ -79,7 +104,10 @@ export function Moldura() {
         </nav>
 
         <div className={estilos.barra}>
-          <Relogio />
+          <div className={estilos.horas}>
+            <Relogio />
+            <LigacaoAoVivo />
+          </div>
           <BotaoDaLetra />
         </div>
       </header>

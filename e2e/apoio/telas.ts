@@ -1,7 +1,7 @@
 import { AxeBuilder } from '@axe-core/playwright';
 import { expect, type Page } from '@playwright/test';
 import { acertarORelogio } from './api';
-import { tokenDoTrabalhador } from './identidade';
+import { tokenDoEscalador, tokenDoTrabalhador } from './identidade';
 
 /*
  * O celular nas mãos do trabalhador: entrar, acertar a hora, conferir a
@@ -40,6 +40,16 @@ export async function entrar(page: Page, quem: Quem, endereco = '/'): Promise<vo
   await page.getByLabel('Token de acesso').fill(tokenDoTrabalhador(quem.matricula, quem.nome));
   await page.getByRole('button', { name: 'Entrar' }).click();
   await expect(page.getByText(`Matrícula ${quem.matricula}`)).toBeVisible();
+}
+
+/** Entra como o órgão gestor: a tela é o quadro (ADR-0021). */
+export async function entrarNoQuadro(page: Page): Promise<void> {
+  await page.goto('/');
+  await expect(page).toHaveURL(/\/entrar/);
+
+  await page.getByLabel('Token de acesso').fill(tokenDoEscalador());
+  await page.getByRole('button', { name: 'Entrar' }).click();
+  await expect(page).toHaveURL(/\/quadro$/);
 }
 
 /**

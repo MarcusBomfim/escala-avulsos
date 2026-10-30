@@ -1,0 +1,157 @@
+.periodo {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem 1rem;
+  margin-bottom: 0.75rem;
+}
+
+.periodo label {
+  display: grid;
+  flex: 1 1 10rem;
+  gap: 0.3rem;
+  color: var(--texto-suave);
+  font-size: 0.85rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.periodo input,
+.periodo select {
+  min-height: 3rem;
+  padding: 0.4rem 0.6rem;
+  border: 2px solid var(--borda-forte);
+  border-radius: var(--raio);
+  background: var(--superficie);
+  color: var(--texto);
+  font: inherit;
+  font-weight: 700;
+  letter-spacing: normal;
+  text-transform: none;
+}
+
+.qual {
+  margin: 0 0 1rem;
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+
+.categorias {
+  display: grid;
+  gap: 1.25rem;
+}
+
+/* A categoria como no quadro de parede: o nome e a situação na faixa do alto. */
+.categoria {
+  display: grid;
+  gap: 0.75rem;
+  padding: 0 1rem 1rem;
+  border: 1px solid var(--rotulo-borda);
+  border-radius: var(--raio);
+  background: var(--superficie);
+}
+
+.cabecalho {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem 0.75rem;
+  align-items: center;
+  justify-content: space-between;
+  margin: 0 -1rem;
+  padding: 0.6rem 1rem;
+  border-bottom: 1px solid var(--rotulo-borda);
+  border-radius: calc(var(--raio) - 1px) calc(var(--raio) - 1px) 0 0;
+  background: var(--rotulo-fundo);
+}
+
+.habilitacao {
+  margin: 0;
+  color: var(--texto-suave);
+  font-weight: 700;
+}
+
+.ternos {
+  display: grid;
+  gap: 0.75rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.terno {
+  display: grid;
+  gap: 0.5rem;
+  padding: 0.75rem;
+  border: 1px solid var(--rotulo-borda);
+  border-radius: 4px;
+  background: var(--linha-par);
+}
+
+.terno > * {
+  margin: 0;
+}
+
+.qualTerno {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem 0.75rem;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.qualTerno h3 {
+  margin: 0;
+  font-size: 1.1rem;
+}
+
+.onde {
+  color: var(--texto-suave);
+}
+
+/* Pedidas, escaladas, em aberto: os números lado a lado, com o rótulo na faixa, como as colunas do quadro. */
+.numeros {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.4rem;
+}
+
+.numeros div {
+  overflow: hidden;
+  border: 1px solid var(--rotulo-borda);
+  border-radius: 4px;
+  background: var(--superficie);
+  text-align: center;
+}
+
+.numeros dt {
+  padding: 0.2rem 0.25rem;
+  border-bottom: 1px solid var(--rotulo-borda);
+  background: var(--rotulo-fundo);
+  color: var(--texto-suave);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+.numeros dd {
+  margin: 0;
+  padding: 0.3rem 0.25rem;
+  font-size: 1.4rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.quem summary {
+  min-height: 3rem;
+  padding: 0.6rem 0;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.quem ul {
+  display: grid;
+  gap: 0.35rem;
+  margin: 0;
+  padding-left: 1.25rem;
+}

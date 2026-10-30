@@ -1,0 +1,19 @@
+/* A bolinha verde antes da palavra, como as do quadro: a tela está ligada ao servidor. */
+.aoVivo {
+  display: inline-flex;
+  gap: 0.4rem;
+  align-items: center;
+  margin: 0;
+  color: var(--texto-suave);
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.aoVivo::before {
+  flex: none;
+  width: 0.7em;
+  height: 0.7em;
+  border-radius: 50%;
+  background: var(--sucesso);
+  content: '';
+}

@@ -39,12 +39,28 @@ describe('o token de quem entra', () => {
     expect(sessao(lerSessao(tokenDeTeste({ name: undefined }))).nome).toBeUndefined();
   });
 
+  test('o escalador e o operador entram para o quadro; o trabalhador com outro papel entra como trabalhador', () => {
+    expect(sessao(lerSessao(tokenDeTeste({ role: 'escalador', matricula: undefined })))).toMatchObject({
+      papel: 'escalador',
+    });
+    expect(sessao(lerSessao(tokenDeTeste({ role: 'operador', cnpj: '11222333000181' })))).toMatchObject({
+      papel: 'operador',
+    });
+    expect(sessao(lerSessao(tokenDeTeste({ role: ['escalador', 'trabalhador'] })))).toMatchObject({
+      papel: 'trabalhador',
+      matricula: 4127,
+    });
+  });
+
   test('recusa o que não é token, o de outro papel, o sem matrícula e o vencido', () => {
     const agora = new Date('2026-11-05T12:00:00Z');
 
     expect(motivo(lerSessao('não-é-token'))).toContain('três partes');
-    expect(motivo(lerSessao(tokenDeTeste({ role: 'escalador' })))).toBe(
-      'Este aplicativo é do trabalhador, e o token não é de trabalhador.',
+    expect(motivo(lerSessao(tokenDeTeste({ role: 'visitante' })))).toBe(
+      'O token não é de trabalhador, de escalador nem de operador.',
+    );
+    expect(motivo(lerSessao(tokenDeTeste({ role: 'operador' })))).toBe(
+      'O token do operador não diz o CNPJ da empresa.',
     );
     expect(motivo(lerSessao(tokenDeTeste({ matricula: undefined })))).toBe(
       'O token não diz a sua matrícula.',

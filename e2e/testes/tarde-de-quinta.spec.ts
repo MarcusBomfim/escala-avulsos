@@ -1,8 +1,9 @@
 import { expect, test, type Page } from '@playwright/test';
-import { acertarORelogio, doEscalador, enviar } from '../apoio/api';
+import { acertarORelogio, doEscalador, doTrabalhador, enviar } from '../apoio/api';
 import {
   alvosGrandes,
   entrar,
+  entrarNoQuadro,
   fotografar,
   noRelogio,
   oQueFoiDito,
@@ -15,9 +16,11 @@ import { Quinta, Trabalhadores } from '../apoio/tardeDeQuinta';
 
 /*
  * A tarde de quinta do README, no celular de cada um, contra a pilha
- * inteira: o Antônio se habilita, a escala sai, ele vê onde trabalha e
- * ouve; o Carlos vê por que ficou de fora; o Edson desiste e a vaga é do
- * Carlos; sem sinal, a escala continua lá; e, no dia seguinte, o mês.
+ * inteira: o Antônio se habilita; a escala sai, e aparece sozinha no celular
+ * aberto dele, que vê onde trabalha e ouve; o Carlos vê por que ficou de
+ * fora; o Edson desiste e a vaga é do Carlos, que lê tudo nos recados; o
+ * quadro do órgão gestor se mexe sozinho; sem sinal, a escala continua lá; e,
+ * no dia seguinte, o mês.
  *
  * Os testes andam juntos, na ordem, com o relógio do porto: cada um parte de
  * onde o anterior parou. Com IMAGENS=1, cada tela é fotografada para o
@@ -26,7 +29,7 @@ import { Quinta, Trabalhadores } from '../apoio/tardeDeQuinta';
 
 test.describe.configure({ mode: 'serial' });
 
-const { antonio, carlos, edson } = Trabalhadores;
+const { antonio, benedito, carlos, edson } = Trabalhadores;
 
 const DaTarde = `/api/escalacoes/Estiva/${Quinta}/Tarde`;
 
@@ -55,18 +58,25 @@ test('às 8h, o Antônio se habilita pelo celular: as funções já vêm marcada
   await expect(tarde).toContainText('Você está habilitado');
 });
 
-test('às 10h a escala sai, e o Antônio lê onde trabalha — e ouve', async ({ page }) => {
-  await acertarORelogio('2026-11-05T10:00:00-03:00');
+test('às 10h a escala sai, e aparece sozinha no celular aberto do Antônio, que lê onde trabalha — e ouve', async ({
+  page,
+}) => {
+  await vozQueAnota(page);
+  await noRelogio(page, '2026-11-05T10:00:00-03:00');
+  await entrar(page, antonio);
+
+  // A escala ainda não saiu: a tela está aberta, esperando, e ligada ao servidor.
+  await expect(page.getByText('Nenhuma escala nestes dias.')).toBeVisible();
+  await expect(page.getByText('Atualiza sozinho')).toBeVisible();
+  const tarde = cartaoDeHoje(page);
+
+  // O órgão gestor faz a escala; o Antônio não toca em nada (ADR-0020).
   const escalador = await doEscalador();
   escala = ((await (await enviar(escalador, 'POST', `${DaTarde}/escala`)).json()) as { id: string }).id;
   await escalador.dispose();
 
-  await vozQueAnota(page);
-  await noRelogio(page, '2026-11-05T10:05:00-03:00');
-  await entrar(page, antonio);
-
-  const tarde = cartaoDeHoje(page);
   await expect(tarde).toContainText('Você vai trabalhar');
+  await expect(page.getByRole('link', { name: 'Recados 1 novo' })).toBeVisible();
   await expect(tarde.getByRole('definition')).toHaveText([
     'Sinaleiro, no terno 1',
     'Atlântico Sul',
@@ -123,6 +133,50 @@ test('às 11h o Edson desiste pelo celular, e a vaga passa para o Carlos', async
   await doCarlos.close();
 });
 
+test('nos recados, o Carlos lê que ficou de fora e, depois, que entrou na escala', async ({ page }) => {
+  await noRelogio(page, '2026-11-05T11:10:00-03:00');
+  await entrar(page, carlos, '/recados');
+
+  const recados = page.getByRole('article');
+  await expect(recados).toHaveCount(2);
+  await expect(recados.nth(0)).toContainText('Você entrou na escala');
+  await expect(recados.nth(0)).toContainText('Quem estava na vaga desistiu, e ela passou para você.');
+  await expect(recados.nth(1)).toContainText('Você ficou de fora da escala');
+  await expect(recados.nth(1)).toContainText('Você é o 1º da espera de sinaleiro');
+  // Abrir os recados os marca como lidos: a aba para de contar.
+  await expect(page.getByRole('link', { name: 'Recados', exact: true })).toBeVisible();
+  await semProblemasDeAcessibilidade(page);
+  await alvosGrandes(page);
+  await fotografar(page, 'recados');
+});
+
+test('o quadro do órgão gestor: o terno completo, quem está em cada vaga, e a desistência que aparece sozinha', async ({
+  page,
+}) => {
+  await noRelogio(page, '2026-11-05T11:20:00-03:00');
+  await entrarNoQuadro(page);
+  await page.getByLabel('Turno').selectOption('Tarde');
+
+  const estiva = page.getByRole('region', { name: 'Estiva' });
+  const terno = estiva.getByRole('article', { name: 'Atlântico Sul, terno 1' });
+  await expect(estiva).toContainText('Escalada');
+  await expect(terno).toContainText('Completo');
+  await expect(terno.getByRole('definition')).toHaveText(['3', '3', '0']);
+  await terno.getByText('Quem está em cada vaga').click();
+  await expect(terno).toContainText('Carlos Mota, matrícula 4152');
+  await expect(page.getByText('Atualiza sozinho')).toBeVisible();
+  await semProblemasDeAcessibilidade(page);
+  await alvosGrandes(page);
+  await fotografar(page, 'quadro');
+
+  // O Benedito desiste pelo celular dele; o quadro do órgão gestor muda sem ninguém tocar.
+  const doBenedito = await doTrabalhador(benedito.matricula, benedito.nome);
+  await enviar(doBenedito, 'POST', `/api/eu/escalas/${escala}/desistencia`);
+  await doBenedito.dispose();
+
+  await expect(terno).not.toContainText('Benedito Lima');
+});
+
 test('sem sinal no cais, o aplicativo abre, e a escala que o Antônio viu continua lá', async ({
   page,
   context,
@@ -168,7 +222,7 @@ test('letra muito grande e contraste alto, numa tela de 320px: nada vaza, nenhum
   await alvosGrandes(page);
   await fotografar(page, 'contraste-alto');
 
-  for (const tela of ['Habilitar', 'Meu mês', 'Meus dados']) {
+  for (const tela of ['Habilitar', 'Recados', 'Meu mês', 'Meus dados']) {
     await page.getByRole('link', { name: tela }).click();
     await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
     await semRolagemDeLado(page);

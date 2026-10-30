@@ -1,0 +1,23 @@
+.celular {
+  display: grid;
+  gap: 0.75rem;
+  margin-bottom: 1.25rem;
+  padding: 1rem 1.25rem;
+  border: 1px solid var(--rotulo-borda);
+  border-left: 0.5rem solid var(--destaque);
+  border-radius: var(--raio);
+  background: var(--superficie-2);
+}
+
+.celular p {
+  margin: 0;
+}
+
+.celular button {
+  justify-self: stretch;
+}
+
+.problema {
+  color: var(--perigo);
+  font-weight: 700;
+}

@@ -1,6 +1,6 @@
 /*
  * O token de acesso: um JWT emitido pelo provedor de identidade, com o papel
- * e a matrícula de quem entrou. Em produção, é o provedor que pede a
+ * de quem entrou — e a matrícula do trabalhador, ou o CNPJ do operador. Em produção, é o provedor que pede a
  * matrícula e a senha; em desenvolvimento, o token é o do `dotnet
  * user-jwts` (ADR-0014, ADR-0017).
  *
@@ -11,13 +11,25 @@
 
 const Chave = 'escala-avulsos.token';
 
-export interface Sessao {
+interface SessaoComum {
   readonly token: string;
   /** O nome de quem entrou; nulo se o token não o traz. */
   readonly nome: string | undefined;
-  readonly matricula: number;
   readonly venceEm: Date | undefined;
 }
+
+/** O trabalhador: a escala dele, a habilitação, o mês, os dados e os recados. */
+export interface SessaoDoTrabalhador extends SessaoComum {
+  readonly papel: 'trabalhador';
+  readonly matricula: number;
+}
+
+/** O escalador, que vê o quadro inteiro, e o operador portuário, que vê os ternos dele (ADR-0021). */
+export interface SessaoDoQuadro extends SessaoComum {
+  readonly papel: 'escalador' | 'operador';
+}
+
+export type Sessao = SessaoDoTrabalhador | SessaoDoQuadro;
 
 export type LeituraDoToken = { readonly sessao: Sessao } | { readonly motivo: string };
 
@@ -102,16 +114,7 @@ export function lerSessao(token: string, agora: Date = new Date()): LeituraDoTok
     return { motivo: 'Isso não é um token de acesso: são três partes separadas por ponto.' };
   }
 
-  if (!textos(carga.role).includes('trabalhador')) {
-    return { motivo: 'Este aplicativo é do trabalhador, e o token não é de trabalhador.' };
-  }
-
-  const matricula = matriculaDe(textos(carga.matricula)[0]);
-
-  if (matricula === undefined) {
-    return { motivo: 'O token não diz a sua matrícula.' };
-  }
-
+  const papeis = textos(carga.role);
   const venceEm = typeof carga.exp === 'number' ? new Date(carga.exp * 1000) : undefined;
 
   if (venceEm && venceEm <= agora) {
@@ -120,5 +123,24 @@ export function lerSessao(token: string, agora: Date = new Date()): LeituraDoTok
 
   const [nome] = [...textos(carga.name), ...textos(carga.unique_name)];
 
-  return { sessao: { token: limpo, nome, matricula, venceEm } };
+  // Quem tem mais de um papel entra como trabalhador: é para ele que o aplicativo foi feito.
+  if (papeis.includes('trabalhador')) {
+    const matricula = matriculaDe(textos(carga.matricula)[0]);
+
+    return matricula === undefined
+      ? { motivo: 'O token não diz a sua matrícula.' }
+      : { sessao: { token: limpo, nome, venceEm, papel: 'trabalhador', matricula } };
+  }
+
+  if (papeis.includes('escalador')) {
+    return { sessao: { token: limpo, nome, venceEm, papel: 'escalador' } };
+  }
+
+  if (papeis.includes('operador')) {
+    return textos(carga.cnpj)[0]
+      ? { sessao: { token: limpo, nome, venceEm, papel: 'operador' } }
+      : { motivo: 'O token do operador não diz o CNPJ da empresa.' };
+  }
+
+  return { motivo: 'O token não é de trabalhador, de escalador nem de operador.' };
 }

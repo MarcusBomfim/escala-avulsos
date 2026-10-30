@@ -4,7 +4,7 @@
 [![Ponta a ponta](https://github.com/MarcusBomfim/escala-avulsos/actions/workflows/e2e.yml/badge.svg)](https://github.com/MarcusBomfim/escala-avulsos/actions/workflows/e2e.yml)
 [![Licença: MIT](https://img.shields.io/badge/licen%C3%A7a-MIT-blue.svg)](LICENSE)
 
-A escala do trabalhador portuário avulso, feita para o celular e para quem já não enxerga tão bem: o estivador abre o aplicativo e lê, numa frase, onde trabalha amanhã — ou por que ficou de fora, e até quando. Por trás da tela, o que a escala precisa saber: quem pode trabalhar em cada função, o pedido do operador portuário, o rodízio, o descanso entre jornadas, a frequência e o extrato, guardados num PostgreSQL que não deixa ninguém em duas jornadas, uma API em que cada um entra com o seu papel, e o aplicativo do trabalhador, com letra que cresce num toque, contraste alto, a escala lida em voz alta, e que abre sem sinal no cais — e, na próxima parte, os avisos.
+A escala do trabalhador portuário avulso, feita para o celular e para quem já não enxerga tão bem: o estivador abre o aplicativo e lê, numa frase, onde trabalha amanhã — ou por que ficou de fora, e até quando. Por trás da tela, o que a escala precisa saber: quem pode trabalhar em cada função, o pedido do operador portuário, o rodízio, o descanso entre jornadas, a frequência e o extrato, guardados num PostgreSQL que não deixa ninguém em duas jornadas, uma API em que cada um entra com o seu papel, e o aplicativo do trabalhador, com letra que cresce num toque, contraste alto, a escala lida em voz alta, e que abre sem sinal no cais. A escala que sai aparece sozinha na tela aberta e chega ao celular como notificação, e o órgão gestor e o operador acompanham o quadro de cada período ao vivo.
 
 C# 14 · .NET 10 · ASP.NET Core · EF Core 10 · PostgreSQL 17 · OpenAPI · React 19 · TypeScript · PWA · TanStack Query · Vitest · Playwright · axe · Testcontainers · xUnit v3 · GitHub Actions
 
@@ -254,6 +254,13 @@ A mesma tarde, no aplicativo de cada um. As imagens saem do teste de ponta a pon
 |---|---|---|
 | ![A mesma escala com a letra muito grande e o contraste alto, branco no preto, numa tela de 320px](docs/imagens/contraste-alto.png) | ![A frequência do mês e o extrato: a tarde de quinta, R$ 260,00, pago até amanhã às 19h](docs/imagens/meu-mes.png) | ![O cadastro do Antônio, com o exame médico que vence em 24 dias](docs/imagens/meus-dados.png) |
 
+| Os recados do Carlos | O quadro do órgão gestor |
+|---|---|
+| ![Os recados do Carlos: "Você entrou na escala", porque quem estava na vaga desistiu, e antes "Você ficou de fora da escala", com o primeiro lugar na espera](docs/imagens/recados.png) | ![O quadro da tarde de quinta: a estiva escalada, o terno 1 do Atlântico Sul completo, com 3 vagas pedidas, 3 escaladas e nenhuma em aberto, e quem está em cada vaga](docs/imagens/quadro.png) |
+
+- **A escala que sai aparece sozinha** no celular aberto, e a aba "Recados" conta o que chegou: "Recados 1 novo". Com o aplicativo fechado, o mesmo recado chega como notificação, e o toque abre a tela certa.
+- **O quadro de parede, no celular do escalador**: cada categoria com a situação da escalação, cada terno com as vagas pedidas, escaladas e em aberto, e quem está em cada vaga. Às 11h20 o Benedito desiste, e o quadro muda sem ninguém tocar.
+
 ## Roteiro
 
 O projeto é construído em partes, cada uma entregue funcionando, testada e documentada.
@@ -266,7 +273,7 @@ O projeto é construído em partes, cada uma entregue funcionando, testada e doc
 | 4 | Persistência com EF Core e PostgreSQL, testes com Testcontainers, e a escala que não põe ninguém em duas vagas ao mesmo tempo | ✅ |
 | 5 | API REST: entrada pela matrícula, papéis de trabalhador, escalador e operador, ProblemDetails, concorrência otimista e idempotência | ✅ |
 | 6 | O aplicativo do trabalhador, para o celular e para quem tem mais idade: "Minha escala" numa tela, letra grande, alto contraste, botões grandes, ouvir a escala, linguagem simples — com a acessibilidade conferida por teste | ✅ |
-| 7 | Avisos e tempo real: notificação quando sai a escala e antes de fechar a habilitação, a escala ao vivo e o painel do escalador e do operador | |
+| 7 | Avisos e tempo real: notificação quando sai a escala e antes de fechar a habilitação, a escala ao vivo e o painel do escalador e do operador | ✅ |
 | 8 | Observabilidade, Docker e entrega contínua | |
 
 ## O que já está pronto
@@ -332,6 +339,18 @@ O projeto é construído em partes, cada uma entregue funcionando, testada e doc
 - **O "não" antes de tentar**: a API passa a dizer as escalações abertas da categoria do trabalhador e, para cada uma, as funções que ele pode escolher, com o motivo das que não pode. O que vai vencer — o exame, a reciclagem — é avisado trinta dias antes.
 - **Sem sinal no cais**, o aplicativo abre pela casca guardada no service worker, e a última escala lida fica no aparelho, com a hora em que foi lida. Sair apaga o que ficou guardado.
 
+**Parte 7 — os avisos e o tempo real**
+
+- **Os recados, escritos para o trabalhador**, em segunda pessoa e com o dia por extenso:
+  - a escala que saiu: "Você vai trabalhar", ou "Você ficou de fora da escala", com os motivos e o lugar na espera;
+  - a vaga que passou para ele: "Quem estava na vaga desistiu, e ela passou para você";
+  - a habilitação que fecha em uma hora sem ele: "A habilitação para a tarde de quinta-feira, 5 de novembro, fecha às 10h, e você ainda não se habilitou";
+  - o exame médico e a reciclagem que vencem em trinta dias.
+- **Um recado por fato.** A escala e a desistência guardam o recado na mesma transação em que gravam: se a gravação não fica, o recado também não. A habilitação e o vencimento, que são o tempo passando, um vigia confere de minuto em minuto. Cada recado tem uma chave, e conferir de novo, em outro servidor ou depois de cair, não repete nenhum.
+- **A tela que se atualiza sozinha.** O PostgreSQL anuncia cada gravação com `pg_notify`, a API escuta numa conexão só dela e repassa por Server-Sent Events, em `/api/eventos`, só o que cada um pode ver: o trabalhador, as escalas da categoria e os recados dele; o escalador e o operador, as escalações, as escalas e as requisições. O aplicativo lê de novo só o que mudou, e diz "Atualiza sozinho" enquanto a ligação está de pé.
+- **A notificação no celular**, pelo Web Push do próprio navegador, sem serviço de terceiros: a mensagem cifrada como manda a RFC 8291, assinada com VAPID (RFC 8292), com a urgência e a validade de cada tipo — a habilitação que fecha não serve depois que fechou. A entrega é tentada até cinco vezes, e a inscrição que o navegador abandonou é apagada. Sem as chaves configuradas, o recado fica só no aplicativo, e a tela diz isso.
+- **O quadro do escalador e do operador**, como o quadro de parede de hoje: por período, cada categoria com a situação — sem escalação, habilitação por abrir, aberta, travada, escalada, encerrada — e o número de habilitados; cada terno com as vagas pedidas, escaladas e em aberto, a situação em palavra, e quem está em cada vaga. A requisição que chegou depois da escala aparece fora do prazo. O operador vê só os ternos que a empresa dele pediu.
+
 ## Decisões
 
 As decisões que mudam o desenho do sistema estão registradas em [`docs/adr`](docs/adr):
@@ -354,6 +373,9 @@ As decisões que mudam o desenho do sistema estão registradas em [`docs/adr`](d
 - [ADR-0016](docs/adr/0016-a-escala-pela-api.md) — a escala pela API: o órgão gestor com versão; o trabalhador numa semana, sem versão; e o contrato escrito no repositório.
 - [ADR-0017](docs/adr/0017-o-aplicativo-do-trabalhador.md) — o aplicativo do trabalhador: um PWA para o celular e para quem tem mais idade, em segunda pessoa, que abre sem sinal no cais.
 - [ADR-0018](docs/adr/0018-o-ensaio-de-ponta-a-ponta.md) — o ensaio de ponta a ponta: a mesma API com o relógio do teste, e o Chrome numa tela de celular, com a acessibilidade conferida.
+- [ADR-0019](docs/adr/0019-os-avisos.md) — os avisos: escritos para o trabalhador, guardados com a escala, e um por fato.
+- [ADR-0020](docs/adr/0020-o-tempo-real-e-o-aviso-no-celular.md) — o tempo real e o aviso no celular: o banco anuncia, o servidor transmite, e o push vai cifrado.
+- [ADR-0021](docs/adr/0021-o-quadro-do-escalador-e-do-operador.md) — o quadro do escalador e do operador: o quadro de parede, com quem está em cada vaga.
 
 E algumas que não precisaram de ADR:
 
@@ -385,7 +407,10 @@ E algumas que não precisaram de ADR:
   - cada problema do catálogo;
   - a tarde de quinta feita pelos três papéis;
   - a requisição repetida dez vezes ao mesmo tempo, que cria uma só;
-  - vinte habilitações e duas desistências ao mesmo tempo, sem nenhum "tente de novo".
+  - vinte habilitações e duas desistências ao mesmo tempo, sem nenhum "tente de novo";
+  - o recado que chega ao serviço de push de mentira, decifrado pelo teste com a chave do navegador, e a inscrição abandonada que é apagada;
+  - os eventos de cada papel, e o quadro de cada um.
+- **Os recados e o tempo real no banco de verdade**: a escala gravada deixa um recado para cada habilitado, e o substituto ganha o dele; o mesmo recado não entra duas vezes; o que um servidor reservou só vai por outro depois que a reserva vence; depois de cinco tentativas, ele fica só no aplicativo; e o anúncio chega a quem escuta, com o que mudou. A cifra do push confere com o exemplo da própria RFC 8291.
 - **Os endpoints conferidos um a um**: todos têm política; todo endpoint que grava declara uma coisa só, entre a versão lida, a chave e o motivo de dispensar as duas; o documento OpenAPI descreve os cabeçalhos; e o contrato publicado é o que a API serve.
 - **O aplicativo, tela por tela**, com a API de mentira do MSW e o axe em cada uma — as WCAG 2.2 até o nível AA:
   - a escala de quem trabalha, de quem ficou de fora, do substituto, de quem desistiu e de quem já trabalhou;
@@ -394,7 +419,7 @@ E algumas que não precisaram de ADR:
   - as datas no relógio do porto, com os testes rodando de propósito no fuso de Manaus;
   - a letra, o contraste, a entrada, a saída que apaga o que ficou guardado, e a escala guardada no aparelho.
 - **De ponta a ponta, no Chrome, numa tela de celular**, contra a API do ensaio, com o relógio acertado para a tarde de quinta:
-  - o Antônio se habilita, a escala sai, ele lê e ouve; o Carlos lê por que ficou de fora; o Edson desiste e a vaga é do Carlos; e, no dia seguinte, o extrato;
+  - o Antônio se habilita, a escala sai e aparece sozinha na tela aberta, ele lê e ouve; o Carlos lê por que ficou de fora; o Edson desiste e a vaga é do Carlos, que lê tudo nos recados; o quadro do órgão gestor muda sozinho com a desistência do Benedito; e, no dia seguinte, o extrato;
   - o aplicativo abre sem sinal, com a escala guardada;
   - o axe em cada tela, com o contraste de 7:1 no tema claro, no escuro e no contraste alto;
   - numa largura de 320px com a letra muito grande, nenhuma tela rola para o lado e nenhuma palavra de botão, do menu ou de título é cortada ao meio; e todo botão tem 48px.
@@ -439,6 +464,24 @@ E um token de desenvolvimento, do papel que quiser. Por exemplo, do trabalhador 
 ```bash
 dotnet user-jwts create --project src/EscalaAvulsos.Api --role trabalhador --claim matricula=4127 --name "Antônio Ferreira"
 ```
+
+O escalador e o operador entram pelo mesmo aplicativo e caem no quadro:
+
+```bash
+dotnet user-jwts create --project src/EscalaAvulsos.Api --role escalador --name "Escala do dia"
+```
+
+```bash
+dotnet user-jwts create --project src/EscalaAvulsos.Api --role operador --claim cnpj=11222333000181 --name "Cais Forte"
+```
+
+Para o recado chegar ao celular como notificação, a API precisa de um par de chaves VAPID e de um contato. O par sai da própria API:
+
+```bash
+dotnet run --project src/EscalaAvulsos.Api -- chaves-vapid
+```
+
+E vai para a configuração `Avisos:Push`, nos user-secrets em desenvolvimento ou nas variáveis `Avisos__Push__ChavePublica`, `Avisos__Push__ChavePrivada` e `Avisos__Push__Contato` (um `mailto:` ou um endereço `https`). Sem elas, os recados ficam só no aplicativo. O navegador só aceita o push em `https` ou em `localhost`.
 
 A configuração do porto fica em `appsettings.json`, na seção `Porto`: os horários da escalação, o descanso entre jornadas, a frequência mínima e a tabela de remuneração. Quando a API muda de propósito, o contrato publicado é regravado pelo próprio teste:
 
@@ -489,7 +532,9 @@ src/EscalaAvulsos.Api/                      a API REST: o contrato HTTP, a segur
   Hospedagem/                               os serviços, o caminho de cada pedido, a documentação e a configuração do porto
   Http/                                     os problemas, a versão na ETag, as convenções e a idempotência
   Seguranca/                                os papéis, as políticas e quem pede, lido do token
-  Recursos/                                 o trabalhador em /api/eu, os trabalhadores, as requisições, as escalações e as escalas
+  Recursos/                                 o trabalhador em /api/eu, os trabalhadores, as requisições, as escalações, as escalas, os eventos e o quadro
+  Avisos/                                   a entrega dos recados ao celular e o vigia dos prazos
+  TempoReal/                                a central que repassa os anúncios do banco a quem escuta
 src/EscalaAvulsos.Dominio/                  regras do negócio, sem dependências
   Comum/                                    exceção de domínio, identidade, relógio do porto, mês, dinheiro e textos
   Identificacao/                            matrícula, CPF, CNPJ e número IMO
@@ -499,17 +544,23 @@ src/EscalaAvulsos.Dominio/                  regras do negócio, sem dependência
   Escalacoes/                               escalação e habilitação, rodízio, descanso, o escalador, a escala e o que vem depois dela
   Frequencias/                              a regra e a frequência do mês
   Extratos/                                 a tabela de remuneração e o extrato do mês
+  Avisos/                                   os recados da escala e dos prazos, escritos para o trabalhador
 src/EscalaAvulsos.Infraestrutura/           o que o domínio não sabe
   Documentos/                               o formato JSON de cada agregado, e a leitura estrita
   Persistencia/                             o contexto do banco, os repositórios, a concorrência e as migrações
-web/                                        o aplicativo do trabalhador, em React e TypeScript
+  Avisos/                                   o push: a inscrição, a cifra, as chaves VAPID e o carteiro
+  TempoReal/                                o ouvinte dos anúncios do banco
+web/                                        o aplicativo do trabalhador, do escalador e do operador, em React e TypeScript
   src/escala/                               minha escala: os cartões da semana, ouvir e desistir
   src/habilitacao/                          as escalações abertas, e as funções que ele pode escolher
   src/mes/                                  a frequência e o extrato
   src/cadastro/                             os dados, com o aviso do que vai vencer
+  src/recados/                              os recados, a contagem na aba e a inscrição no push
+  src/quadro/                               o quadro do escalador e do operador
+  src/tempoReal/                            a ligação ao vivo com a API, e o que ler de novo a cada mudança
   src/leitura/                              a letra e o contraste
   src/offline/                              a escala guardada no aparelho e o aviso de sem internet
-  public/sw.js                              o service worker, que guarda a casca para abrir sem sinal
+  public/sw.js                              o service worker, que guarda a casca para abrir sem sinal e mostra a notificação
 e2e/                                        a tarde de quinta no Chrome, numa tela de celular, com o axe
 tests/EscalaAvulsos.Api.Ensaio/             a API do ensaio: a mesma API, com o relógio que o teste acerta
 tests/EscalaAvulsos.Api.Testes/             a API inteira, em memória, com um banco por teste

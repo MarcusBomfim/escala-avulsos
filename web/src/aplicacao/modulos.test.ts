@@ -13,12 +13,24 @@ describe('as áreas do aplicativo', () => {
   });
 
   test('o menu sai na ordem pedida por cada área, e quem não pede entrada fica fora dele', () => {
-    const menu = entradasDoMenu([
+    const menu = entradasDoMenu('trabalhador', [
       { rotas: [{ path: 'b' }], menu: { rotulo: 'B', icone: 'mes', caminho: '/b', ordem: 2 } },
       { rotas: [{ path: 'escondida' }] },
       { rotas: [{ index: true }], menu: { rotulo: 'A', icone: 'escala', caminho: '/', ordem: 1 } },
     ]);
 
     expect(menu.map((entrada) => entrada.rotulo)).toEqual(['A', 'B']);
+  });
+
+  test('cada papel vê as áreas dele: o trabalhador, as cinco; o escalador e o operador, o quadro', () => {
+    expect(entradasDoMenu('trabalhador').map((entrada) => entrada.rotulo)).toEqual([
+      'Minha escala',
+      'Habilitar',
+      'Recados',
+      'Meu mês',
+      'Meus dados',
+    ]);
+    expect(entradasDoMenu('escalador').map((entrada) => entrada.rotulo)).toEqual(['Quadro']);
+    expect(entradasDoMenu('operador').map((entrada) => entrada.rotulo)).toEqual(['Quadro']);
   });
 });

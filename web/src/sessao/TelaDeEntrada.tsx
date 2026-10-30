@@ -86,6 +86,11 @@ export function TelaDeEntrada() {
             dotnet user-jwts create --project src/EscalaAvulsos.Api --role trabalhador --claim matricula=4127
             --name &quot;Antônio Ferreira&quot;
           </code>
+          Para o quadro, o do escalador:
+          <code>
+            dotnet user-jwts create --project src/EscalaAvulsos.Api --role escalador --name &quot;Escala do
+            dia&quot;
+          </code>
         </p>
       </form>
     </main>

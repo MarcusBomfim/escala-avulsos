@@ -6,5 +6,5 @@ export const modulo: Modulo = {
     { path: 'mes', element: <TelaDoMes /> },
     { path: 'mes/:mes', element: <TelaDoMes /> },
   ],
-  menu: { rotulo: 'Meu mês', icone: 'mes', caminho: '/mes', ordem: 3 },
+  menu: { rotulo: 'Meu mês', icone: 'mes', caminho: '/mes', ordem: 4 },
 };
